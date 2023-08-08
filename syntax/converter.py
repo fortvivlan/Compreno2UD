@@ -3,6 +3,7 @@ from syntax.internal import *
 
 
 class Converter:
+    """Main Syntax converter class"""
     def __init__(self, infile, output):
         self.infile = infile 
         self.output = output 
@@ -12,6 +13,7 @@ class Converter:
         self.baseud = BaseConverter() 
         
     def convert(self):
+        """Main method"""
         with open(self.infile, 'r', encoding='utf8') as inp, open(self.output, 'w', encoding='utf8') as out:
             for line in inp:
                 sent = json.loads(line)
