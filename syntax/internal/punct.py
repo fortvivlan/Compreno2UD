@@ -27,8 +27,6 @@ class Punctuation:
                     head = -1
                 quotes[idx - 1]['head'] = head
                 quotes[idx]['head'] = head
-        for q in quotes:
-            sent['tokens'][q['id'] - 1]['head'] = q['head']
 
     def punctuation_brackets(self, sent):
         brackets = [token for token in sent['tokens'] if token['lemma'] in '()']
@@ -55,13 +53,9 @@ class Punctuation:
                     if brackets[prev]['lemma'] == '(':
                         brackets[prev]['head'] = head
 
-        for b in brackets:
-            sent['tokens'][b['id'] - 1]['head'] = b['head']
-
     def punctuation(self, sent, punc, comma=False):
         punct = [token for token in sent['tokens'] if token['lemma'] in punc]
         prev = 0
-        endsent = False
         for i in range(len(punct)):
             if comma and punct[i]['lemma'] == ',':
                 prev = punct[i]['id']
@@ -115,5 +109,7 @@ class Punctuation:
 
             # print()
             prev = punct[i]['id']
-        for p in punct:
-            sent['tokens'][p['id'] - 1]['head'] = p['head']
+        # какой-то гребаный костыль
+        if punct and punct[-1]['lemma'] == '.':
+            senthead = [t['id'] for t in sent['tokens'] if t['head'] == 0][0]
+            punct[-1]['head'] = senthead 
