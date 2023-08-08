@@ -1,14 +1,9 @@
-class HeadConverter:
-
-    def convert(self, sent):
-        pass 
-
-class DepConverter:
-
-    def convert(self, sent):
-        pass
+from syntax.internal.baseru import RuBaseConverter
 
 class BaseConverter:
-
-    def convert(self, sent):
-        pass
+    def chooselang(self, lang):
+        try:
+            return eval(f'{lang}BaseConverter()')
+        except NameError:
+            print('No such language!')
+            return None

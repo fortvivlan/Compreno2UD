@@ -11,9 +11,9 @@ class Compreno2UD:
     temp - path for temporary .json file with the results of syntax conversion
     outfile - path for resulting .conllu file
     """
-    def __init__(self, mwe, infile, temp, outfile):
-        self.syntax = Syntax(infile, temp)
-        self.morph = Morph(mwe, temp, outfile)
+    def __init__(self, lang, mwe, infile, temp, outfile):
+        self.syntax = Syntax(lang, infile, temp)
+        self.morph = Morph(lang, mwe, temp, outfile)
 
     def convert(self):
         self.syntax.convert() 
@@ -29,6 +29,7 @@ if __name__ == '__main__':
     ##########################
 
     # parser = argparse.ArgumentParser(description='Compreno2UD Converter')
+    # parser.add_argument('lang', type=str, help='Language of conversion, example: Ru, En')
     # parser.add_argument('infile', type=str, help='Input file for conversion')
     # parser.add_argument('outfile', type=str, help='Output path for result')
     # args = parser.parse_args()
@@ -37,6 +38,8 @@ if __name__ == '__main__':
     ## to run in IDE:
     #################
 
-    infile = 'data/first.json'
+    lang = 'Ru'
+    infile = 'data/smalltest.json'
     outfile = 'data/result.conllu'
-    converter = Compreno2UD(mwe, infile, temp, outfile)
+    converter = Compreno2UD(lang, mwe, infile, temp, outfile)
+    converter.convert()

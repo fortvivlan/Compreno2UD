@@ -3,15 +3,17 @@ from syntax.internal import *
 
 
 class Converter:
-    def __init__(self, infile, output):
+    """Main Syntax converter class"""
+    def __init__(self, lang, infile, output):
         self.infile = infile 
         self.output = output 
         self.punct = Punctuation()
-        self.deprels = DeprelConverter() 
-        self.deps = EnhancedConverter() 
-        self.baseud = BaseConverter() 
+        self.deprels = DeprelConverter().chooselang(lang)
+        self.deps = EnhancedConverter().chooselang(lang)
+        self.baseud = BaseConverter().chooselang(lang)
         
     def convert(self):
+        """Main method"""
         with open(self.infile, 'r', encoding='utf8') as inp, open(self.output, 'w', encoding='utf8') as out:
             for line in inp:
                 sent = json.loads(line)
@@ -32,9 +34,11 @@ class Converter:
             for h in heads[1:]:
                 sent['tokens'][h[0]]['head'] = head
                 sent['tokens'][h[0]]['deprel'] = 'conj'
+                sent['tokens'][h[0]]['deps'] = f'{head}:conj|0:root' # посмотреть синтагрус
 
 if __name__ == '__main__':
     inputfile = 'data/smalltest.json'
     res = 'data/temp.json'
-    syntax = Converter(inputfile, res)
+    lang = 'ru'
+    syntax = Converter(lang.capitalize(), inputfile, res)
     syntax.convert()
