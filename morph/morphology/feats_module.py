@@ -83,8 +83,6 @@ class Feats_module:
                 if 'VerbForm' in needed_feat:
                     if needed_feat['VerbForm'][0] == 'GTInfinitive':#проверить[0]
                         needed_feat['VerbForm'] = 'Inf'
-                    #if needed_feat['VerbForm'][0] == 'GTImperative':
-                        #needed_feat['VerbForm'] = ''
                     elif needed_feat['VerbForm'][0] in ('GTVerb', 'GTInvariable'):#проверить[0]
                         needed_feat['VerbForm'] = 'Fin'
                     elif needed_feat['VerbForm'][0] in ('GTParticipleAttributive', 'GTParticiple'):#проверить[0]
