@@ -13,12 +13,12 @@ class Compreno2UD:
     """
     def __init__(self, lang, mwe, infile, temp, outfile):
         self.syntax = Syntax(lang, infile, temp)
-        self.morph = Morph(lang, mwe, temp, outfile)
+        # self.morph = Morph(lang, mwe, temp, outfile)
 
     def convert(self):
         self.syntax.convert() 
-        self.morph.convert_wordlines()
-        os.remove(self.temp)
+        # self.morph.convert_wordlines()
+        # os.remove(self.temp)
 
 if __name__ == '__main__':
 
@@ -33,12 +33,12 @@ if __name__ == '__main__':
     # parser.add_argument('infile', type=str, help='Input file for conversion')
     # parser.add_argument('outfile', type=str, help='Output path for result')
     # args = parser.parse_args()
-    # converter = Compreno2UD(mwe, args.infile, temp, args.outfile)
+    # converter = Compreno2UD(lang, mwe, args.infile, temp, args.outfile)
 
     ## to run in IDE:
     #################
 
-    lang = 'Ru'
+    lang = 'En'
     infile = 'data/smalltest.json'
     outfile = 'data/result.conllu'
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
