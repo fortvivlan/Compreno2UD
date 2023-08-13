@@ -11,6 +11,7 @@ class Punctuation:
         self.apocheck(sent)
 
     def punctuation_quotes(self, sent):
+        # переписать - подумать над алгоритмом
         ### odd quote number??
         quotes = [token for token in sent['tokens'] if token['lemma'] == '"']
         if len(quotes) % 2:
@@ -63,6 +64,7 @@ class Punctuation:
                         brackets[prev]['head'] = head
 
     def punctuation(self, sent, punc, comma=False):
+        # cases where dash - use SurfSlots
         punct = [token for token in sent['tokens'] if token['lemma'] in punc]
         prev = 0
         for i in range(len(punct)):
@@ -130,13 +132,9 @@ class Punctuation:
         fordel = []
         for idx, a in apos:
             try:
-                if sent['tokens'][idx + 1]['form'].lower() in {'ll'}:
-                    a['head'] = sent['tokens'][idx + 1]['id']
-                elif sent['tokens'][idx + 1]['form'] == 's':
-                    sent['tokens'][idx + 1]['form'] = "'s"
+                if sent['tokens'][idx + 1]['form'].lower() in {'ll', 's', 've', 'd', 're'}:
+                    sent['tokens'][idx + 1]['form'] = f"'{sent['tokens'][idx + 1]['form'].lower()}"
                     fordel.append(a)
-                elif sent['tokens'][idx - 1]['form'] == '"':
-                    a['head'] = sent['tokens'][idx - 1]['head']
             except IndexError:
                 a['head'] = self.senthead
         if fordel:
@@ -157,3 +155,11 @@ class Punctuation:
                     for dep in deps:
                         dep['head'] = token['id']
             sent['tokens'].remove(delt) # check
+        sent['text'] = ''
+        for token in sent['tokens']:
+            if token['misc'] == 'SpaceAfter=No':
+                sent['text'] += token['form']
+            elif token['misc'] == 'ellipsis':
+                continue
+            else:
+                sent['text'] += token['form'] + ' '

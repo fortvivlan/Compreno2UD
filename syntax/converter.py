@@ -8,7 +8,6 @@ class Converter:
         self.infile = infile 
         self.output = output 
         self.punct = Punctuation()
-        # переписать это говно костыльное
         self.deprels = DeprelConverter(lang)
         self.deps = EnhancedConverter(lang)
         self.baseud = BaseConverter(lang)
@@ -22,6 +21,7 @@ class Converter:
                 self.punct.punctheads(sent)
                 ## TODO ##
                 # copula swap?
+                self.copulaswap(sent) #test
                 # direct speech swap
                 self.deprels.convert(sent)
                 self.deps.convert(sent)
@@ -51,6 +51,26 @@ class Converter:
                     h['head'] = head 
                     h['deprel'] = 'conj'
                     h['deps'] = f'{head}:conj|0:root' # посмотреть синтагрус
+
+    def copulaswap(self, sent):
+        copulas = [t for t in sent['tokens'] if t['SemClass'] in {'BE', 'NEAREST_FUTURE'}]
+        if not copulas:
+            return 
+        for cop in copulas:
+            deps = [t for t in sent['tokens'] if t['head'] == cop['id']]
+            if len(deps) < 1:
+                raise Exception 
+            cop['deprel'] = 'cop'
+            depcompl = [t for t in deps if 'Complement' in t['SurfSlot']]
+            if depcompl:
+                head = depcompl[0]
+            else:
+                head = deps[0]
+            head['head'] = cop['head'] 
+            cop['head'] = head['id']
+            for token in sent['tokens']:
+                if token['head'] == cop['id']:
+                    token['head'] = head['id']
 
 if __name__ == '__main__':
     inputfile = 'data/smalltest.json'
