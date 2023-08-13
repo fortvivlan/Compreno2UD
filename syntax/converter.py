@@ -8,9 +8,10 @@ class Converter:
         self.infile = infile 
         self.output = output 
         self.punct = Punctuation()
-        self.deprels = DeprelConverter().chooselang(lang)
-        self.deps = EnhancedConverter().chooselang(lang)
-        self.baseud = BaseConverter().chooselang(lang)
+        # переписать это говно костыльное
+        self.deprels = DeprelConverter(lang)
+        self.deps = EnhancedConverter(lang)
+        self.baseud = BaseConverter(lang)
         
     def convert(self):
         """Main method"""
@@ -19,6 +20,9 @@ class Converter:
                 sent = json.loads(line)
                 self.twoheads(sent)
                 self.punct.punctheads(sent)
+                ## TODO ##
+                # copula swap?
+                # direct speech swap
                 self.deprels.convert(sent)
                 self.deps.convert(sent)
                 self.baseud.convert(sent)
@@ -27,14 +31,26 @@ class Converter:
     def twoheads(self, sent):
         """Not sure if we'll need it - for cases with more than one zero in heads, 
         usually conjunction of predicates"""
-        heads = [(idx, token['id']) for idx, token in enumerate(sent['tokens']) if token['head'] == 0]
-        headsnofloat = [(idx, t) for idx, t in heads if type(t) != float]
-        if len(heads) > 1:
-            head = heads[0][1]
-            for h in heads[1:]:
-                sent['tokens'][h[0]]['head'] = head
-                sent['tokens'][h[0]]['deprel'] = 'conj'
-                sent['tokens'][h[0]]['deps'] = f'{head}:conj|0:root' # посмотреть синтагрус
+        ## TODO - check Direct Speech
+        c = 0
+        heads = [token for token in sent['tokens'] if token['head'] == 0]
+        headsnofloat = [token for token in heads if type(token['id']) == int]
+        if len(headsnofloat) > 1:
+            head = headsnofloat[0]['id']
+            if len(heads) > 1:
+                for h in heads:
+                    if not c and type(h['id'] == int):
+                        c = 1
+                        continue 
+                    h['head'] = head
+                    h['deprel'] = 'conj'
+                    h['deps'] = f'{head}:conj|0:root' # посмотреть синтагрус
+        elif len(headsnofloat) == 1:
+            for h in heads:
+                if type(h['id'] == float) and h['id'] > headsnofloat[0]['id']:
+                    h['head'] = head 
+                    h['deprel'] = 'conj'
+                    h['deps'] = f'{head}:conj|0:root' # посмотреть синтагрус
 
 if __name__ == '__main__':
     inputfile = 'data/smalltest.json'
