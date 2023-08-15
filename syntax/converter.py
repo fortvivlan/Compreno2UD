@@ -46,6 +46,7 @@ class Converter:
                     h['deprel'] = 'conj'
                     h['deps'] = f'{head}:conj|0:root' # посмотреть синтагрус
         elif len(headsnofloat) == 1:
+            head = headsnofloat[0]['id']
             for h in heads:
                 if type(h['id'] == float) and h['id'] > headsnofloat[0]['id']:
                     h['head'] = head 

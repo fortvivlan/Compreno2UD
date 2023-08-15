@@ -1,5 +1,5 @@
 import os, argparse
-from morph.converter import Converter as Morph
+# from morph.converter import Converter as Morph
 from syntax.converter import Converter as Syntax 
 
 class Compreno2UD:
@@ -12,13 +12,14 @@ class Compreno2UD:
     outfile - path for resulting .conllu file
     """
     def __init__(self, lang, mwe, infile, temp, outfile):
+        self.temp = temp
         self.syntax = Syntax(lang, infile, temp)
         # self.morph = Morph(lang, mwe, temp, outfile)
 
     def convert(self):
         self.syntax.convert() 
         # self.morph.convert_wordlines()
-        # os.remove(self.temp)
+        os.remove(self.temp)
 
 if __name__ == '__main__':
 
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     #################
 
     lang = 'En'
-    infile = 'data/smalltest.json'
+    infile = 'data/english.json'
     outfile = 'data/result.conllu'
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
     converter.convert()
