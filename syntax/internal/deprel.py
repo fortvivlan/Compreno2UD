@@ -105,7 +105,7 @@ class DeprelConverter:
                 token['deprel'] = 'amod'
 
             # nmod - ??
-            if head['pos'] == 'Noun' and (token['pos'] in {'Noun', 'Pronoun'} or token['SurfSlot'] == 'AdjunctTime'):
+            if head['pos'] == 'Noun' and (token['pos'] in {'Noun', 'Pronoun'} or 'Time' in token['SurfSlot']):
                 token['deprel'] = 'nmod'
             if token['SurfSlot'] in {'PossessorPremodGenitiveS', 'PossessorPremod'}:
                 token['deprel'] = 'nmod:poss'
@@ -168,10 +168,12 @@ class DeprelConverter:
                     token['deprel'] = 'nsubj'
 
             # parataxis
-            if token['SemSlot'] in self.parataxis:
-                token['deprel'] = 'parataxis'
-            if token['SemSlot'] == 'DirectSpeech' and head:
-                token['deprel'] = 'parataxis'
+            if token['deprel'] != 'cop': #copula
+                if token['SemSlot'] in self.parataxis or token['SemSlot'] == 'DirectSpeech' and head: 
+                    token['deprel'] = 'parataxis'
+            else:
+                if head['SemSlot'] in self.parataxis or head['SemSlot'] == 'DirectSpeech' and head:
+                    token['deprel'] = 'parataxis'
             if token['SurfSlot'] in {'NominalPostMod_Dash', 'NominalPostModBracket', 'SpecificationClause_Brackets'}: 
                 token['deprel'] = 'parataxis'
 
@@ -201,9 +203,10 @@ class DeprelConverter:
                 token['deprel'] = 'xcomp'
             elif 'Clause' in token['SurfSlot'] and ('Object' in token['SemSlot'] or token['SemSlot'] == 'State'): # check
                 token['deprel'] = 'ccomp'
-            dislo = token['SurfSlot'] == 'Dislocation_Right' and token['grammemes'].get('FiniteClass') == ['Infinitive']
-            if (token['SurfSlot'].startswith('Complement') or dislo) and token['pos'] != 'Adverb': # and head['SemClass'] == 'BE' and head['SemSlot'] in {'Predicate', 'Relation_Correlative', 'Clause_Finite'}
-                token['deprel'] = 'xcomp' 
+            ## КОПУЛА - пока в XCOMP
+            # dislo = token['SurfSlot'] == 'Dislocation_Right' and token['grammemes'].get('FiniteClass') == ['Infinitive']
+            # if (token['SurfSlot'].startswith('Complement') or dislo or token['SurfSlot'] == 'Idiomatic_ParticipleComplement') and token['pos'] != 'Adverb': # and head['SemClass'] == 'BE' and head['SemSlot'] in {'Predicate', 'Relation_Correlative', 'Clause_Finite'}
+            #     token['deprel'] = 'xcomp' 
             # Пока сущ-руты получают xcomp
 
             # vocative?
@@ -241,9 +244,11 @@ class DeprelConverter:
                             token['deprel'] = 'csubj:pass'
                     else:
                         token['deprel'] = 'csubj'
-                # appos 
+                # appos, tmod
                 if 'AppositiveUsage' in usage and token['SurfSlot'] != 'Modifier_Appositive_Numeral':
                     token['deprel'] = 'appos'
+                if token['grammemes'].get('Classifying_Temporal') == ['Year_Digital'] and head['pos'] == 'Noun':
+                    token['deprel'] = 'nmod:tmod'
                 # flat:name
                 if 'AnthroponymComponentUsage' in usage:
                     token['deprel'] = 'flat:name'
@@ -287,3 +292,11 @@ class DeprelConverter:
                 for dep in deps:
                     dep['head'] = token['head']
                 token['head'] = newhead
+
+            # DS parataxis
+            if head['grammemes'].get('DirectSpeechDiathesis') and not token['deprel']:
+                token['deprel'] = 'parataxis'
+            if not token['deprel']:
+                copula = [t for t in sent['tokens'] if t['head'] == token['id'] and t['SemClass'] in {'BE', 'NEAREST_FUTURE'}]
+                if copula and copula[0]['SemSlot'] == 'DirectSpeech':
+                    token['deprel'] = 'parataxis'

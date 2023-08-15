@@ -11,6 +11,7 @@ class Punctuation:
         self.apocheck(sent)
 
     def punctuation_quotes(self, sent):
+        # переписать - подумать над алгоритмом
         ### odd quote number??
         quotes = [token for token in sent['tokens'] if token['lemma'] == '"']
         if len(quotes) % 2:
@@ -20,12 +21,12 @@ class Punctuation:
             last = None
         for idx in range(1, len(quotes), 2):
             const = [token for token in sent['tokens'] if quotes[idx - 1]['id'] < token['id'] < quotes[idx]['id']]
-            if const:
-                heads = [t['head'] for t in const]
+            headconst = [t['head'] for t in const if t['head']]
+            if const and headconst:
                 # if None in heads:
                 #     print(sent['text'])
-                headmax = max([t['head'] for t in const if t['head']])
-                headmin = min([t['head'] for t in const if t['head']])
+                headmax = max(headconst)
+                headmin = min(headconst)
                 if quotes[idx - 1]['id'] < headmax < quotes[idx]['id']:
                     head = [t['id'] for t in const if t['head'] == headmin][0]
                 elif headmax < quotes[idx - 1]['id'] or headmax > quotes[idx]['id']:
@@ -49,9 +50,10 @@ class Punctuation:
                     continue
                 if brackets[idx]['lemma'] == ')' and idx > 0:
                     const = [token for token in sent['tokens'] if brackets[prev]['id'] < token['id'] < brackets[idx]['id']]
-                    if const:
-                        headmin = min([t['head'] for t in const])
-                        headmax = max([t['head'] for t in const])
+                    headconst = [t['head'] for t in const if t['head']]
+                    if const and headconst:
+                        headmin = min(headconst)
+                        headmax = max(headconst)
                         if brackets[idx - 1]['id'] < headmax < brackets[idx]['id']:
                             head = [t['id'] for t in const if t['head'] == headmin][0]
                         elif headmax < brackets[idx - 1]['id'] or headmax > brackets[idx]['id']:
@@ -63,6 +65,7 @@ class Punctuation:
                         brackets[prev]['head'] = head
 
     def punctuation(self, sent, punc, comma=False):
+        # cases where dash - use SurfSlots
         punct = [token for token in sent['tokens'] if token['lemma'] in punc]
         prev = 0
         for i in range(len(punct)):
@@ -130,13 +133,9 @@ class Punctuation:
         fordel = []
         for idx, a in apos:
             try:
-                if sent['tokens'][idx + 1]['form'].lower() in {'ll'}:
-                    a['head'] = sent['tokens'][idx + 1]['id']
-                elif sent['tokens'][idx + 1]['form'] == 's':
-                    sent['tokens'][idx + 1]['form'] = "'s"
+                if sent['tokens'][idx + 1]['form'].lower() in {'ll', 's', 've', 'd', 're'}:
+                    sent['tokens'][idx + 1]['form'] = f"'{sent['tokens'][idx + 1]['form'].lower()}"
                     fordel.append(a)
-                elif sent['tokens'][idx - 1]['form'] == '"':
-                    a['head'] = sent['tokens'][idx - 1]['head']
             except IndexError:
                 a['head'] = self.senthead
         if fordel:
@@ -157,3 +156,11 @@ class Punctuation:
                     for dep in deps:
                         dep['head'] = token['id']
             sent['tokens'].remove(delt) # check
+        sent['text'] = ''
+        for token in sent['tokens']:
+            if token['misc'] == 'SpaceAfter=No':
+                sent['text'] += token['form']
+            elif token['misc'] == 'ellipsis':
+                continue
+            else:
+                sent['text'] += token['form'] + ' '
