@@ -16,10 +16,8 @@ class Converter:
         self.fix_lemmas_en = Fixes_en()
         self.lang = lang
         self.feats_module = Feats_module()
-        self.fixes = Fixes(r'\morphology\ImpToPerf.txt', r'\morphology\pos_invariable.txt')
-        #поменять пути на относительные и поставить слэши
+        self.fixes = Fixes('morph/ImpToPerf.txt', 'morph/pos_invariable.txt')
         self.pos_module = Pos_module()
-        #так, self сделала, у utils есть одна только одна функция - convert wordlines, нужно подумать стоит ли ее разбить
         self.wordline_pattern = re.compile(r'^.+?\t.+?[A-Za-z]+')
         self.foreign_bounded_token = re.compile(r'[A-za-z]+ [A-za-z]+')
         self.number_bounded = re.compile(r'\d+,?\d*?-\d+,?\d*?')
@@ -27,7 +25,7 @@ class Converter:
         self.mwe = mwe
         self.infile = infile
         self.outfile = outfile
-        #поменять пути на относительные и поставить слэши
+
 
 
 
