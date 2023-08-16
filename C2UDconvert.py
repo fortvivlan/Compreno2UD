@@ -19,12 +19,12 @@ class Compreno2UD:
     def convert(self):
         self.syntax.convert() 
         self.morph.convert_wordlines()
-        os.remove(self.temp)
+        # os.remove(self.temp)
 
 if __name__ == '__main__':
 
-    mwe = r'\Compreno2UD\morph\mwe.csv'
-    temp = r'\data\temp.json'
+    mwe = 'Compreno2UD/morph/mwe.csv'
+    temp = 'data/temp.json'
 
     ## to run in command line:
     ##########################
@@ -39,8 +39,8 @@ if __name__ == '__main__':
     ## to run in IDE:
     #################
 
-    lang = 'En'
-    infile = r'\data\english.json'
-    outfile = r'\data\result.conllu'
+    lang = 'Ru'
+    infile = 'data/smalltest.json' # если слеши ставить прямые, то питону пофиг на r и какая операционная система, он разберется, удобно для совместимости
+    outfile = 'data/result.conllu'
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
     converter.convert()

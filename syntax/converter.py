@@ -66,7 +66,7 @@ class Converter:
             if depcompl:
                 head = depcompl[0]
             else:
-                head = deps[0]
+                head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() != 'это'][0] # костыль хаха
             head['head'] = cop['head'] 
             cop['head'] = head['id']
             for token in sent['tokens']:
