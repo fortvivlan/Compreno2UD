@@ -294,9 +294,13 @@ class DeprelConverter:
                 token['head'] = newhead
 
             # DS parataxis
-            if head['grammemes'].get('DirectSpeechDiathesis') and not token['deprel']:
-                token['deprel'] = 'parataxis'
-            if not token['deprel']:
-                copula = [t for t in sent['tokens'] if t['head'] == token['id'] and t['SemClass'] in {'BE', 'NEAREST_FUTURE'}]
-                if copula and copula[0]['SemSlot'] == 'DirectSpeech':
+            try:
+                if head['grammemes'].get('DirectSpeechDiathesis') and not token['deprel']:
                     token['deprel'] = 'parataxis'
+                if not token['deprel']:
+                    copula = [t for t in sent['tokens'] if t['head'] == token['id'] and t['SemClass'] in {'BE', 'NEAREST_FUTURE'}]
+                    if copula and copula[0]['SemSlot'] == 'DirectSpeech':
+                        token['deprel'] = 'parataxis'
+            except AttributeError:
+                print(sent['text'])
+                raise
