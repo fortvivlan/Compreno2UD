@@ -1,5 +1,5 @@
 import os, argparse
-from morph.converter import Converter as Morph
+# from morph.converter import Converter as Morph
 from syntax.converter import Converter as Syntax 
 
 class Compreno2UD:
@@ -14,11 +14,11 @@ class Compreno2UD:
     def __init__(self, lang, mwe, infile, temp, outfile):
         self.temp = temp
         self.syntax = Syntax(lang, infile, temp)
-        self.morph = Morph(lang, mwe, temp, outfile)
+        # self.morph = Morph(lang, mwe, temp, outfile)
 
     def convert(self):
         self.syntax.convert() 
-        self.morph.convert_wordlines()
+        # self.morph.convert_wordlines()
         # os.remove(self.temp)
 
 if __name__ == '__main__':
@@ -42,5 +42,6 @@ if __name__ == '__main__':
     lang = 'En'
     infile = 'data/english.json' # если слеши ставить прямые, то питону пофиг на r и какая операционная система, он разберется, удобно для совместимости
     outfile = 'data/res.conllu'
+    
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
     converter.convert()
