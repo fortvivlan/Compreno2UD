@@ -24,9 +24,9 @@ class Pos_module_en:
                             'мой', 'твой', 'ваш', 'наш', 'свой',
                             'любой', 'каждый', 'какой-то', 'некоторый', 'такой-то',
                             'чей-то', 'чей-либо', 'кой', 'никой'}#set для det'''
-                        
+
         self.symb_set = {'%', '$', '№', '°', '€','£', '+', '=', '#', '@', '~', '^', '\\','/', '&'}#set для symb
-    
+
     def convert_pos_en(self, token, lemma, pos_tag, feats, semclass) -> str:
 
         '''функция для обработки частей речи'''
@@ -51,17 +51,17 @@ class Pos_module_en:
         if pos_tag == 'NUM':
             if 'PartletOfSpeech' in feats and feats['PartletOfSpeech'] == ['NumeralOrdinal']:
                 pos_tag = 'ADJ'
-        
+
         if pos_tag == 'NOUN':
             if semclass == 'YEAR_NUMBER':
                 pos_tag = 'NUM'
-        
+
         #RomanNumber
         if lemma == '#RomanNumber':
             pos_tag = 'NUM'
         if semclass == 'ACRONYM' and token in {'I', 'II'}:
             pos_tag = 'NUM'
-        
+
         #todo: для некоторых нужно поменять на DET часть речи
 
 

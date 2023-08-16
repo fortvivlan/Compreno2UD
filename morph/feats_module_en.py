@@ -307,7 +307,7 @@ class Feats_module_en:
                         needed_feat['NumForm'] = 'Roman'
                     elif token in re.findall(re.compile(r'[A-za-z]+'), token):
                         needed_feat['NumForm'] = 'Word'
-                    elif token in re.findall(re.compile(r'\d+'), token):
+                    elif token in re.findall(re.compile(r'\d+'), token) or token in re.findall(re.compile(r'\d+.\d+'), token):
                         needed_feat['NumForm'] = 'Digit'
 
                 if semclass == '#ACRONYM' and token in {'I', 'II'}:
