@@ -11,7 +11,7 @@ class Fixes_en:
                                 '#ElliptedVerb',
                                 '#Expression',
                                 '#Number',
-                                
+
                                 '#Substantivizer',
                                 '#UnknownName',
                                 '#UnknownWord',

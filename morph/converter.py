@@ -1,20 +1,20 @@
 import re, csv, pickle, json
 
-from morphology.feats_module_en import Feats_module_en
-from morphology.pos_module_en import Pos_module_en
-from morphology.fix_lemmas_en import Fixes_en
+from morph.feats_module_en import Feats_module_en
+from morph.pos_module_en import Pos_module_en
+from morph.fix_lemmas_en import Fixes_en
 
-from morphology.pos_module import Pos_module
-from morphology.feats_module import Feats_module
-from morphology.fixes import Fixes
+from morph.pos_module import Pos_module
+from morph.feats_module import Feats_module
+from morph.fixes import Fixes
 
-class Converter_en:
+class Converter:
     '''основной класс конвертера'''
-    def __init__(self, mwe, lang, infile, outfile):
+    def __init__(self, lang, mwe, infile, outfile):
         self.feats_module_en = Feats_module_en()
         self.pos_module_en = Pos_module_en()
         self.fix_lemmas_en = Fixes_en()
-
+        self.lang = lang
         self.feats_module = Feats_module()
         self.fixes = Fixes(r'\morphology\ImpToPerf.txt', r'\morphology\pos_invariable.txt')
         #поменять пути на относительные и поставить слэши
@@ -33,7 +33,7 @@ class Converter_en:
 
 
     def convert_wordlines(self):
-        if lang == 'ru':
+        if self.lang == 'Ru':
             bounded_token_list = []
             with open(self.mwe, 'r', encoding='utf-8') as csvfile:
                 reader = csv.reader(csvfile)
@@ -61,7 +61,7 @@ class Converter_en:
                 sent_id = 0
                 for i in range(len(data) - 1):
                     print('Конвертация ...')
-                    print(data[i])
+                    print(data[i]['text'])
                     bounded = 0
                     bounded_fgn = 0
                     out.write(f"# sent_id = {sent_id + 1}\n")
@@ -120,7 +120,7 @@ class Converter_en:
 
 
 
-        elif lang == 'en':
+        elif self.lang == 'En':
             data = []
             with open(self.infile, 'rb') as f, open(self.outfile, 'w', encoding="utf8") as out:
                 out.write(f"# global.columns =  ID FORM LEMMA UPOS XPOS FEATS HEAD DEPREL DEPS MISC SEMSLOT SEMCLASS\n")
@@ -129,7 +129,7 @@ class Converter_en:
                 sent_id = 0
                 for i in range(len(data) - 1):
                     print('Конвертация ...')
-                    print(data[i])
+                    print(data[i]['text'])
                     out.write(f"# sent_id = {sent_id + 1}\n")
                     out.write(f"# text = {data[sent_id]['text']}\n")
 
@@ -143,6 +143,8 @@ class Converter_en:
                             ud_feats = word['grammemes']
                         else:
                             new_feats = self.feats_module_en.filter_feats_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemClass'], word['SemSlot'])
+                            if word['lemma'] == '#RomanNumber':
+                                word['lemma'] = word['form']
                             if type(new_feats) == str:
                                 ud_feats = new_feats
                             else:
@@ -159,7 +161,7 @@ class Converter_en:
             f.close()
 
 
-if __name__ == '__main__':
+'''if __name__ == '__main__':
 
     mwe = r'morphology\mwe.csv'
     lang = 'ru'
@@ -167,8 +169,8 @@ if __name__ == '__main__':
         indir = r'first(new).json'
         outdir = r'convertedrus.conllu'
     elif lang == 'en':
-        indir = r'english.json'
-        outdir = r'convertedeng.conllu'
+        indir = r'\Compreno2UD\morph\english.json'
+        outdir = r'\data\res.conllu'
 
     morph = Converter_en(mwe, lang.capitalize(), indir, outdir)
-    morph.convert_wordlines()
+    morph.convert_wordlines()'''
