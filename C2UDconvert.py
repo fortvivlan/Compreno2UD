@@ -1,5 +1,5 @@
 import os, argparse
-# from morph.converter import Converter as Morph
+from morph.converter import Converter as Morph
 from syntax.converter import Converter as Syntax 
 
 class Compreno2UD:
@@ -14,17 +14,17 @@ class Compreno2UD:
     def __init__(self, lang, mwe, infile, temp, outfile):
         self.temp = temp
         self.syntax = Syntax(lang, infile, temp)
-        # self.morph = Morph(lang, mwe, temp, outfile)
+        self.morph = Morph(lang, mwe, temp, outfile)
 
     def convert(self):
         self.syntax.convert() 
-        # self.morph.convert_wordlines()
+        self.morph.convert_wordlines()
         os.remove(self.temp)
 
 if __name__ == '__main__':
 
-    mwe = 'morph/morphology/mwe.csv'
-    temp = 'data/temp.json'
+    mwe = r'\Compreno2UD\morph\mwe.csv'
+    temp = r'\data\temp.json'
 
     ## to run in command line:
     ##########################
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     #################
 
     lang = 'En'
-    infile = 'data/english.json'
-    outfile = 'data/result.conllu'
+    infile = r'\data\english.json'
+    outfile = r'\data\result.conllu'
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
     converter.convert()
