@@ -10,7 +10,7 @@ class Converter:
         self.punct = Punctuation()
         self.deprels = DeprelConverter(lang)
         self.deps = EnhancedConverter(lang)
-        self.baseud = BaseConverter(lang)
+        #self.baseud = BaseConverter(lang)
         
     def convert(self):
         """Main method"""
@@ -18,14 +18,14 @@ class Converter:
             for line in inp:
                 sent = json.loads(line)
                 self.twoheads(sent)
-                self.punct.punctheads(sent)
                 ## TODO ##
-                # copula swap?
-                self.copulaswap(sent) #test
                 # direct speech swap
                 self.deprels.convert(sent)
+                # copula swap?
+                self.copulaswap(sent) #test
                 self.deps.convert(sent)
-                self.baseud.convert(sent)
+                self.punct.punctheads(sent)
+                self.eudclean(sent)
                 print(json.dumps(sent, ensure_ascii=False), file=out)
 
     def twoheads(self, sent):
@@ -51,7 +51,7 @@ class Converter:
                 if type(h['id'] == float) and h['id'] > headsnofloat[0]['id']:
                     h['head'] = head 
                     h['deprel'] = 'conj'
-                    h['deps'] = f'{head}:conj|0:root' # посмотреть синтагрус
+                    h['deps'] = f'0:root|{head}:conj' 
 
     def copulaswap(self, sent):
         copulas = [t for t in sent['tokens'] if t['SemClass'] in {'BE', 'NEAREST_FUTURE'}]
@@ -61,10 +61,10 @@ class Converter:
             deps = [t for t in sent['tokens'] if t['head'] == cop['id']]
             if len(deps) < 1:
                 raise Exception 
-            cop['deprel'] = 'cop'
             depcompl = [t for t in deps if 'Complement' in t['SurfSlot']]
             if depcompl:
                 head = depcompl[0]
+                depcompl[0]['deprel'] = cop['deprel']
             else:
                 head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() != 'это'][0] # костыль хаха
             head['head'] = cop['head'] 
@@ -72,6 +72,12 @@ class Converter:
             for token in sent['tokens']:
                 if token['head'] == cop['id']:
                     token['head'] = head['id']
+            cop['deprel'] = 'cop'
+    
+    def eudclean(self, sent):
+        for token in sent['tokens']:
+            if token['form'] == '#NULL':
+                token['deprel'], token['head'] = '_', '_'
 
 if __name__ == '__main__':
     inputfile = 'data/smalltest.json'

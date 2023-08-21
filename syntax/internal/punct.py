@@ -3,7 +3,12 @@ class Punctuation:
     
     def punctheads(self, sent):
         """Main method"""
-        self.senthead = [token['id'] for token in sent['tokens'] if token['head'] == 0][0] # если 0 вершин, вывалится
+        try:
+            self.senthead = [token['id'] for token in sent['tokens'] if token['head'] == 0][0] # если 0 вершин, вывалится
+        except IndexError:
+            for token in sent['tokens']:
+                print(token['id'], token['form'], token['head'], sep='\t')
+            raise
         self.punctuation_quotes(sent)
         self.punctuation_brackets(sent)
         self.punctuation(sent, ',')
