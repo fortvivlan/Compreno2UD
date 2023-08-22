@@ -42,5 +42,6 @@ if __name__ == '__main__':
     lang = 'En'
     infile = 'data/english.json' # если слеши ставить прямые, то питону пофиг на r и какая операционная система, он разберется, удобно для совместимости
     outfile = 'data/res.conllu'
+    
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
     converter.convert()
