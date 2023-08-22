@@ -17,7 +17,9 @@ class EnhancedConverter:
             return
         conjdict = defaultdict(list)
         for c in conjs:
-            if c['head'] != 0:
+            if c['deps'] and 'conj' in c['deps']:
+                continue
+            elif c['head'] != 0:
                 conjdict[c['head']].append(c)
         for cluster in conjdict:
             if len(conjdict[cluster]) == 1:
@@ -47,12 +49,40 @@ class EnhancedConverter:
             deps = [t for t in sent['tokens'] if t['head'] == el['id']]
             deprels = {t['deprel']: t for t in deps}
             if el['deprel'] not in {'nsubj', 'obj', 'iobj', 'obl', 'nmod', 'nummod'}:
-                for d in ('aux', 'cop', 'mark'):
-                    if d in deprels:
-                        newhead = deprels[d]
-                        break 
+                if self.lang != 'Ru':
+                    for d in ('aux', 'cop', 'mark'):
+                        if d in deprels:
+                            newhead = deprels[d]
+                            break 
+                elif self.lang == 'Ru':
+                    if el['deprel'] == 'root' and 'cop' in deprels:
+                        for d in ('amod', 'nummod', 'det', 'nmod', 'case'):
+                            if d in deprels:
+                                newhead = [t for t in deps if t['deprel'] == d][0]
+                                break 
+                    else:
+                        for d in ('aux','cop', 'mark', 'advmod', 'obl'):
+                            if d in deprels:
+                                # гребаный костыль потому что гребаный компрено считает в "совершенно ни при чем" вершиной "совершенно"
+                                if deprels[d]['lemma'] == 'совершенно': 
+                                    check = [t for t in sent['tokens'] if t['head'] == deprels[d]['id'] and t['form'].lower() == 'при чем']
+                                    if check:
+                                        newhead = check[0]
+                                        newhead['deps'] = f"{el['head']}:{newhead['deprel']}"
+                                        deprels[d]['head'] = newhead['id']
+                                        deprels[d]['deps'] = f"{newhead['id']}:{deprels[d]['deprel']}"
+                                        deps.remove(deprels[d])
+                                        newhead['head'] = 0
+                                        newhead['deprel'] = el['deprel']
+                                        break
+                                if not newhead:
+                                    newhead = deprels[d]
+                                    break 
                 for dep in deps:
-                    dep['deps'] = f"{el['id']}:{dep['deprel']}"
+                    if dep['deps'] and 'conj' in dep['deps']:
+                        dep['deps'] = f"0:root|{el['id']}:{dep['deprel']}" # порисерчить, как это правильно: когда conj с эллипсисом и одновременно рут
+                    else:
+                        dep['deps'] = f"{el['id']}:{dep['deprel']}"
                     if not newhead:
                         dep['deprel'] = 'orphan'
                         dep['head'] = el['head']
@@ -62,6 +92,7 @@ class EnhancedConverter:
                             dep['head'] = el['head']
                         else:
                             dep['head'] = newhead['id']
+                            
             else:
                 for d in ('amod', 'nummod', 'det', 'nmod', 'case'):
                     if d in deprels:
