@@ -26,10 +26,6 @@ class Converter:
         self.infile = infile
         self.outfile = outfile
 
-
-
-
-
     def convert_wordlines(self):
         if self.lang == 'Ru':
             bounded_token_list = []
@@ -65,11 +61,7 @@ class Converter:
                     out.write(f"# sent_id = {sent_id + 1}\n")
                     out.write(f"# text = {data[sent_id]['text']}\n")
 
-
                     for word in data[sent_id]['tokens']:
-
-                        '''if word['grammemes'] == None:
-                            word['grammemes'] = '_'''#в новом json теперь по дефолту стоят _ у граммем, если их нет!
                         
                         if re.compile(r'\w+- \w+').fullmatch(word['form']):
                             word['form'] = word['form'].replace(' ', '')#!убирает пробел из слова, которое пишется через дефис
@@ -143,12 +135,20 @@ class Converter:
                             new_feats = self.feats_module_en.filter_feats_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemClass'], word['SemSlot'])
                             if word['lemma'] == '#RomanNumber':
                                 word['lemma'] = word['form']
+                            if word['misc'] == None:
+                                word['misc'] = '_'
+                            else:
+                                word['misc'] = word['misc']
                             if type(new_feats) == str:
                                 ud_feats = new_feats
                             else:
                                 ud_feats = '|'.join(new_feats)
+                        if word['misc'] == 'None':
+                            word['misc'] = '_'
+                        else:
+                            word['misc'] = word['misc']
 
-                        out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\tdeps\tmisc\t{word['SemSlot']}\t{word['SemClass']}\n")
+                        out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\tdeps\t{word['misc']}\t{word['SemSlot']}\t{word['SemClass']}\n")
                         word_counter -= 1
                         if word_counter == 0:
                             break
