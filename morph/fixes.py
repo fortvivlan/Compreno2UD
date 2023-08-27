@@ -187,12 +187,12 @@ class Fixes:
             c = 0
             if word['form'].lower() in bounded_token_list:
                 for token in csv_dict.items():
-                    if token[0].startswith(word['form'].lower()) and word['pos'] in token[0]:
+                    if token[0].startswith(word['form'].lower()):#- тут добавлю, когда размечу все омонимичные токены #token[0].startswith(word['form'].lower()) and word['pos'] in token[0] 
                         for part in token[1]:
                             if part['head'] != '_':
-                                head = int(part['deprel'])####red flag!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!здесь не должно быть депрела!!!!!!
-                            elif part['head'] == 'None':
-                                head = 0
+                                head = int(part['head'])#upd: исправила
+                            #elif part['head'] == 'None':
+                                #head = 0
                             else:
                                 head = word['head']
                             new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower(),
@@ -205,17 +205,18 @@ class Fixes:
                                 new_word['head'] = word['head']
                                 new_word['SemSlot'] = new_word['SemSlot']
                                 new_word['SemClass'] = word['SemClass']
+                                new_word['deprel'] = word['deprel']
                             if new_word['id'] == 1:
                                 new_word['form'] = new_word['form'].title()
                             c += 1
                             divided_words.append(new_word)
-                        if word['form'].lower() in ('больше, чем', 'более, чем'):
+                        '''if word['form'].lower() in ('больше, чем', 'более, чем'):
                             for word in sent:
                                 if word['head'] == 0:
                                     b_head = word['id']
                             divided_words[0]['head'] = b_head
                             divided_words[1]['head'] = word['head']
-                            divided_words[2]['head'] = word['head']
+                            divided_words[2]['head'] = word['head']'''#единственное, что ХОТЬ КАК-ТО могло быть связано с менее чем
 
                         dic = {k: k for k in range(1, len(sent))}
                         start = sent.index(word)

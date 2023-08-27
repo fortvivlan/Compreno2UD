@@ -41,7 +41,7 @@ class Converter:
                         word_find = 1
                     if word_find:
                         if row[0] == '%':
-                            parts.append({'id': None, 'form': row[1], 'lemma': row[2], 'pos': row[3], 'grammemes': row[4], 'head': row[5], 'deprel': row[6]})
+                            parts.append({'id': None, 'form': row[1], 'lemma': row[2], 'pos': row[3], 'grammemes': row[4], 'head': row[6], 'deprel': row[5]})
                         if row[0] == '##':
                             word_find = 0
                             csv_dict[old_token] = parts
@@ -67,7 +67,7 @@ class Converter:
                             word['form'] = word['form'].replace(' ', '')#!убирает пробел из слова, которое пишется через дефис
                         word['pos'] = self.pos_module.convert_pos(word['form'], word['lemma'], word['pos'], word['grammemes'], word['deprel'], word['SemSlot'], word['SemClass'])
                         word['pos'] = self.fixes.pos_invariable_fix(word['form'], word['pos'])
-                        if word['pos'] == 'VERB':#!мб Verb, а не VERB?
+                        if word['pos'] == 'VERB':
                             word['lemma'] = self.fixes.imp_and_perf(word['lemma'], word['grammemes'])
                         if word['lemma'] == '#Expression':
                             word['pos'] = 'PROPN'
