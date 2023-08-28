@@ -187,7 +187,7 @@ class Fixes:
             c = 0
             if word['form'].lower() in bounded_token_list:
                 for token in csv_dict.items():
-                    if token[0].startswith(word['form'].lower()):#- тут добавлю, когда размечу все омонимичные токены #token[0].startswith(word['form'].lower()) and word['pos'] in token[0] 
+                    if token[0].lower() == word['form'].lower():#- тут добавлю, когда размечу все омонимичные токены #token[0].startswith(word['form'].lower()) and word['pos'] in token[0] 
                         for part in token[1]:
                             if part['head'] != '_':
                                 head = int(part['head'])#upd: исправила
@@ -195,9 +195,14 @@ class Fixes:
                                 #head = 0
                             else:
                                 head = word['head']
-                            new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower(),
-                                        'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'head': head,
-                                        'SemSlot': '_', 'SemClass': '__'}
+                            if part['pos'] == 'PROPN' or part['form'] in ('I', 'II'):#с I можно еще подумать
+                                new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower().capitalize(), 'p0s': '_',
+                                            'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'head': head, 'misc': '_',
+                                            'SemSlot': '_', 'SemClass': '__'}
+                            else:
+                                new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower(), 'p0s': '_',
+                                            'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'head': head, 'misc': '_',
+                                            'SemSlot': '_', 'SemClass': '__'}                                
 
                             if new_word['head'] != 0:
                                 new_word['head'] = new_word['id'] - new_word['head']
@@ -206,17 +211,19 @@ class Fixes:
                                 new_word['SemSlot'] = new_word['SemSlot']
                                 new_word['SemClass'] = word['SemClass']
                                 new_word['deprel'] = word['deprel']
+                                new_word['misc'] = '_'
+                                new_word['p0s'] ='_'
                             if new_word['id'] == 1:
                                 new_word['form'] = new_word['form'].title()
                             c += 1
                             divided_words.append(new_word)
-                        '''if word['form'].lower() in ('больше, чем', 'более, чем'):
+                        if word['form'].lower() in ('больше, чем', 'более, чем'):
                             for word in sent:
                                 if word['head'] == 0:
                                     b_head = word['id']
                             divided_words[0]['head'] = b_head
                             divided_words[1]['head'] = word['head']
-                            divided_words[2]['head'] = word['head']'''#единственное, что ХОТЬ КАК-ТО могло быть связано с менее чем
+                            divided_words[2]['head'] = word['head']
 
                         dic = {k: k for k in range(1, len(sent))}
                         start = sent.index(word)
