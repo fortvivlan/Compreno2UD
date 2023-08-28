@@ -197,18 +197,19 @@ class Fixes:
                                 head = word['head']
                             if part['pos'] == 'PROPN' or part['form'] in ('I', 'II'):#с I можно еще подумать
                                 new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower().capitalize(), 'p0s': '_',
-                                            'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'head': head, 'misc': '_',
+                                            'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'deps': word['deps'], 'head': head, 'misc': '_',
                                             'SemSlot': '_', 'SemClass': '__'}
                             else:
                                 new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower(), 'p0s': '_',
-                                            'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'head': head, 'misc': '_',
+                                            'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'deps': word['deps'], 'head': head, 'misc': '_',
                                             'SemSlot': '_', 'SemClass': '__'}                                
 
                             if new_word['head'] != 0:
                                 new_word['head'] = new_word['id'] - new_word['head']
+                                new_word['deps'] = 'deps'
                             else:
                                 new_word['head'] = word['head']
-                                new_word['SemSlot'] = new_word['SemSlot']
+                                new_word['SemSlot'] = word['SemSlot']
                                 new_word['SemClass'] = word['SemClass']
                                 new_word['deprel'] = word['deprel']
                                 new_word['misc'] = '_'

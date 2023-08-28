@@ -179,8 +179,10 @@ class Converter:
                             word['misc'] = '_'
                         else:
                             word['misc'] = word['misc']
+                        
+
                                 
-                        out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\tdeps\t{word['misc']}\t{word['SemSlot']}\t{word['SemClass']}\n")
+                        out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\t{word['deps']}\t{word['misc']}\t{word['SemSlot']}\t{word['SemClass']}\n")
                         word_counter -= 1
                         if word_counter == 0:
                             break
