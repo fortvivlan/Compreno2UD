@@ -187,17 +187,22 @@ class Fixes:
             c = 0
             if word['form'].lower() in bounded_token_list:
                 for token in csv_dict.items():
-                    if token[0].startswith(word['form'].lower()) and word['pos'] in token[0]:
+                    if token[0].lower() == word['form'].lower():#- тут добавлю, когда размечу все омонимичные токены #token[0].startswith(word['form'].lower()) and word['pos'] in token[0] 
                         for part in token[1]:
                             if part['head'] != '_':
-                                head = int(part['deprel'])####red flag!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!здесь не должно быть депрела!!!!!!
-                            elif part['head'] == 'None':
-                                head = 0
+                                head = int(part['head'])#upd: исправила
+                            #elif part['head'] == 'None':
+                                #head = 0
                             else:
                                 head = word['head']
-                            new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower(),
-                                        'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'head': head,
-                                        'SemSlot': '_', 'SemClass': '__'}
+                            if part['pos'] == 'PROPN' or part['form'] in ('I', 'II'):#с I можно еще подумать
+                                new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower().capitalize(), 'p0s': '_',
+                                            'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'head': head, 'misc': '_',
+                                            'SemSlot': '_', 'SemClass': '__'}
+                            else:
+                                new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower(), 'p0s': '_',
+                                            'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'head': head, 'misc': '_',
+                                            'SemSlot': '_', 'SemClass': '__'}                                
 
                             if new_word['head'] != 0:
                                 new_word['head'] = new_word['id'] - new_word['head']
@@ -205,6 +210,9 @@ class Fixes:
                                 new_word['head'] = word['head']
                                 new_word['SemSlot'] = new_word['SemSlot']
                                 new_word['SemClass'] = word['SemClass']
+                                new_word['deprel'] = word['deprel']
+                                new_word['misc'] = '_'
+                                new_word['p0s'] ='_'
                             if new_word['id'] == 1:
                                 new_word['form'] = new_word['form'].title()
                             c += 1

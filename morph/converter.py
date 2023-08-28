@@ -26,10 +26,6 @@ class Converter:
         self.infile = infile
         self.outfile = outfile
 
-
-
-
-
     def convert_wordlines(self):
         if self.lang == 'Ru':
             bounded_token_list = []
@@ -40,12 +36,12 @@ class Converter:
                 word_find = 0
                 for row in reader:
                     if row[0][0].isalpha():
-                        old_token = (f"{row[0]} | {row[1]}")
+                        old_token = (f"{row[0]}")
                         bounded_token_list.append(row[0])
                         word_find = 1
                     if word_find:
                         if row[0] == '%':
-                            parts.append({'id': None, 'form': row[1], 'lemma': row[2], 'pos': row[3], 'grammemes': row[4], 'head': row[5], 'deprel': row[6]})
+                            parts.append({'id': None, 'form': row[1], 'lemma': row[2], 'pos': row[3], 'grammemes': row[4], 'head': row[6], 'deprel': row[5]})
                         if row[0] == '##':
                             word_find = 0
                             csv_dict[old_token] = parts
@@ -65,17 +61,13 @@ class Converter:
                     out.write(f"# sent_id = {sent_id + 1}\n")
                     out.write(f"# text = {data[sent_id]['text']}\n")
 
-
                     for word in data[sent_id]['tokens']:
-
-                        '''if word['grammemes'] == None:
-                            word['grammemes'] = '_'''#в новом json теперь по дефолту стоят _ у граммем, если их нет!
                         
                         if re.compile(r'\w+- \w+').fullmatch(word['form']):
                             word['form'] = word['form'].replace(' ', '')#!убирает пробел из слова, которое пишется через дефис
                         word['pos'] = self.pos_module.convert_pos(word['form'], word['lemma'], word['pos'], word['grammemes'], word['deprel'], word['SemSlot'], word['SemClass'])
                         word['pos'] = self.fixes.pos_invariable_fix(word['form'], word['pos'])
-                        if word['pos'] == 'VERB':#!мб Verb, а не VERB?
+                        if word['pos'] == 'VERB':
                             word['lemma'] = self.fixes.imp_and_perf(word['lemma'], word['grammemes'])
                         if word['lemma'] == '#Expression':
                             word['pos'] = 'PROPN'
@@ -119,6 +111,25 @@ class Converter:
 
 
         elif self.lang == 'En':
+            bounded_token_list = []
+            with open(self.mwe, 'r', encoding='utf-8') as csvfile:
+                reader = csv.reader(csvfile)
+                csv_dict = {}  # {(old_token, pos): [{part1:v, pos:v...},{part2:v...}}
+                parts = []
+                word_find = 0
+                for row in reader:
+                    if row[0][0].isalpha():
+                        old_token = (f"{row[0]}")
+                        bounded_token_list.append(row[0].lower())
+                        word_find = 1
+                    if word_find:
+                        if row[0] == '%':
+                            parts.append({'id': None, 'form': row[1], 'lemma': row[2], 'pos': row[3], 'grammemes': row[4], 'head': row[6], 'deprel': row[5]})
+                        if row[0] == '##':
+                            word_find = 0
+                            csv_dict[old_token] = parts
+                            parts = []
+            csvfile.close()
             data = []
             with open(self.infile, 'rb') as f, open(self.outfile, 'w', encoding="utf8") as out:
                 out.write(f"# global.columns =  ID FORM LEMMA UPOS XPOS FEATS HEAD DEPREL DEPS MISC SEMSLOT SEMCLASS\n")
@@ -128,6 +139,8 @@ class Converter:
                 for i in range(len(data) - 1):
                     print('Конвертация ...')
                     print(data[i]['text'])
+                    bounded = 0
+                    bounded_fgn = 0
                     out.write(f"# sent_id = {sent_id + 1}\n")
                     out.write(f"# text = {data[sent_id]['text']}\n")
 
@@ -135,20 +148,39 @@ class Converter:
                         word['p0s'] = word['pos']#это чтобы сохранить старые посы
                         word['pos'] = self.pos_module_en.convert_pos_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemClass'])
                         word['lemma'] = self.fix_lemmas_en.fix_lemmas_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'])
+                        if word['form'].lower() in bounded_token_list:
+                            bounded = 1
+                    if bounded:
+                        self.fixes.indexation_bounded_csv(data[sent_id]['tokens'], csv_dict, bounded_token_list)
+
                     for word in data[sent_id]['tokens']:
                         word_counter = len(data[sent_id]['tokens'])
                         if type(word['grammemes']) == str:
                             ud_feats = word['grammemes']
                         else:
-                            new_feats = self.feats_module_en.filter_feats_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemClass'], word['SemSlot'])
+                            new_feats = self.feats_module_en.filter_feats_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['deprel'], word['SemClass'], word['SemSlot'])
                             if word['lemma'] == '#RomanNumber':
                                 word['lemma'] = word['form']
+                            if word['misc'] == None:
+                                word['misc'] = '_'
+                            else:
+                                word['misc'] = word['misc']
                             if type(new_feats) == str:
                                 ud_feats = new_feats
                             else:
                                 ud_feats = '|'.join(new_feats)
+                        if 'ReferenceClass' in word['grammemes'] and word['grammemes']['ReferenceClass'][0] == 'RCRelative':
+                            for word1 in data[sent_id]['tokens']:
+                                if word1['id'] == word['head'] and word1['deprel'] == 'acl:relcl':
+                                    ud_feats = 'PronType=Rel'
 
-                        out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\tdeps\tmisc\t{word['SemSlot']}\t{word['SemClass']}\n")
+
+                        if word['misc'] == 'None':
+                            word['misc'] = '_'
+                        else:
+                            word['misc'] = word['misc']
+                                
+                        out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\tdeps\t{word['misc']}\t{word['SemSlot']}\t{word['SemClass']}\n")
                         word_counter -= 1
                         if word_counter == 0:
                             break
