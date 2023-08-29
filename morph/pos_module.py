@@ -34,7 +34,7 @@ class Pos_module:
         if pos_tag in self.parts_of_speech:
             pos_tag = self.parts_of_speech[pos_tag]
         # конвертация с использованием feats
-        if pos_tag == 'NOUN' and 'Proper' in feats:
+        if pos_tag == 'NOUN' and 'Capitalization' in feats and feats['Capitalization'][0] == 'ProperCapitalization':
             pos_tag = 'PROPN'  # надо бы еще леммы title делать
         elif pos_tag == 'VERB' and 'SyntacticParadigm' in feats and feats['SyntacticParadigm'][0] == 'SyntAuxVerb' or token in ('б', 'бы'):
             pos_tag = 'AUX'

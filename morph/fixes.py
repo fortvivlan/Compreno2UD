@@ -204,16 +204,20 @@ class Fixes:
                                             'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'deps': word['deps'], 'head': head, 'misc': '_',
                                             'SemSlot': '_', 'SemClass': '__'}                                
 
-                            if new_word['head'] != 0:
+                            if new_word['head'] != 0:#если не вершина
                                 new_word['head'] = new_word['id'] - new_word['head']
-                                new_word['deps'] = 'deps'
-                            else:
+                                new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}'
+                                if part['pos'] == 'ADP':
+                                    new_word['deps'] = f'{new_word["head"]}:{word["deprel"]}:case'
+                            else:#если вершина
                                 new_word['head'] = word['head']
                                 new_word['SemSlot'] = word['SemSlot']
                                 new_word['SemClass'] = word['SemClass']
                                 new_word['deprel'] = word['deprel']
+                                new_word['deps'] = word['deps']
                                 new_word['misc'] = '_'
                                 new_word['p0s'] ='_'
+
                             if new_word['id'] == 1:
                                 new_word['form'] = new_word['form'].title()
                             c += 1
@@ -270,13 +274,13 @@ class Fixes:
             if foreign_bounded_token.search(word['form']):
                 f_parts = word['form'].split()
                 first_token_id = word['id'] + c
-                new_word = {'id': first_token_id, 'form': f_parts[0], 'lemma': f_parts[0], 'pos': 'X', 'grammemes': 'Foreign=Yes',
-                            'deprel': word['deprel'], 'head': word['head'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
+                new_word = {'id': first_token_id, 'form': f_parts[0], 'lemma': f_parts[0], 'pos': 'X', 'p0s': word['p0s'], 'grammemes': 'Foreign=Yes',
+                            'deprel': word['deprel'], 'deps': word['deps'], 'head': word['head'], 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
                 divided_words.append(new_word)
                 c += 1
                 for f_part in f_parts[1:]:
-                    new_word = {'id': word['id'] + c, 'form': f_part, 'lemma': f_part, 'pos': '__', 'grammemes': 'Foreign=Yes',
-                                'deprel': 'flat:foreign', 'head': first_token_id, 'SemSlot': '_', 'SemClass': word['SemClass']}
+                    new_word = {'id': word['id'] + c, 'form': f_part, 'lemma': f_part, 'pos': '__', 'p0s': '_', 'grammemes': 'Foreign=Yes',
+                                'deprel': 'flat:foreign', 'deps': f'{first_token_id}:flat:foreign', 'head': first_token_id, 'misc': '_', 'SemSlot': '_', 'SemClass': word['SemClass']}
                     c += 1
                     divided_words.append(new_word)
 
@@ -311,16 +315,16 @@ class Fixes:
             elif number_bounded.fullmatch(word['form']) and word['pos'] in ('ADJ', 'NUM') and word['SemSlot'] != 'Specification':
                     parts = re.compile(r'(\d+,?\d*?)(-)(\d+,?\d*?)').findall(word['form'])
                     first_token_id = word['id'] + c
-                    new_word = {'id': first_token_id, 'form': parts[0][0], 'lemma': parts[0][0], 'pos': word['pos'], 'grammemes': word['grammemes'],
-                                'head': word['head'], 'deprel': word['deprel'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
+                    new_word = {'id': first_token_id, 'form': parts[0][0], 'lemma': parts[0][0], 'pos': word['pos'], 'p0s': word['p0s'], 'grammemes': word['grammemes'],
+                                'head': word['head'], 'deprel': word['deprel'], 'deps': word['deps'], 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
                     c += 1
                     divided_words.append(new_word)
-                    new_word = {'id': word['id'] + c, 'form': parts[0][1], 'lemma': parts[0][1], 'pos': '__', 'grammemes': '_',
-                                'head': first_token_id + 2, 'deprel': 'punct', 'SemSlot': '_', 'SemClass': 'punct'}
+                    new_word = {'id': word['id'] + c, 'form': parts[0][1], 'lemma': parts[0][1], 'pos': '__', 'p0s': '_', 'grammemes': '_',
+                                'head': first_token_id + 2, 'deprel': 'punct', 'deps': f'{first_token_id}:{word["deprel"]}', 'misc': 'SpaceAfter=No', 'SemSlot': '_', 'SemClass': 'punct'}
                     c += 1
                     divided_words.append(new_word)
-                    new_word = {'id': word['id'] + c, 'form': parts[0][2], 'lemma': parts[0][2], 'pos': '__', 'grammemes': word['grammemes'],
-                                'head': first_token_id, 'deprel': word['deprel'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
+                    new_word = {'id': word['id'] + c, 'form': parts[0][2], 'lemma': parts[0][2], 'pos': '__', 'p0s': word['p0s'],  'grammemes': word['grammemes'],
+                                'head': first_token_id, 'deprel': word['deprel'], 'deps': f'{first_token_id}:{word["deprel"]}:minus', 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
                     c += 1
                     divided_words.append(new_word)
 
@@ -377,9 +381,12 @@ class Fixes:
                                     'form': to_merge_token + sent[counter + 1]['form'] + sent[counter + 2]['form'],
                                     'lemma': to_merge_token + sent[counter + 1]['lemma'] + sent[counter + 2]['lemma'],
                                     'pos': 'ADJ',
+                                    'p0s': sent[counter]['p0s'],
                                     'grammemes': sent[counter]['grammemes'],
                                     'deprel': 'amod',
+                                    'deps': sent[counter]['deps'],
                                     'head': sent[counter]['head'],
+                                    'misc': sent[counter]['misc'],
                                     'SemSlot': sent[counter]['SemSlot'],
                                     'SemClass': sent[counter]['SemClass']}
                     elif sent[counter]['pos'] == 'PROPN' and sent[counter + 2]['form'].startswith('на-'):
@@ -387,9 +394,12 @@ class Fixes:
                                     'form': to_merge_token + sent[counter + 1]['form'] + sent[counter + 2]['form'],
                                     'lemma': to_merge_token + sent[counter + 1]['lemma'] + sent[counter + 2]['lemma'],
                                     'pos': sent[counter]['pos'],
+                                    'p0s': sent[counter]['p0s'],
                                     'grammemes': sent[counter]['grammemes'],
                                     'deprel': sent[counter]['deprel'],
+                                    'deps': sent[counter]['deps'],
                                     'head': sent[counter]['head'],
+                                    'misc': sent[counter]['misc'],
                                     'SemSlot': sent[counter]['SemSlot'],
                                     'SemClass': sent[counter]['SemClass']}
 
@@ -398,9 +408,12 @@ class Fixes:
                                     'form': to_merge_token + sent[counter + 1]['form'] + sent[counter + 2]['form'],
                                     'lemma': to_merge_token + sent[counter + 1]['lemma'] + sent[counter + 2]['lemma'],
                                     'pos': 'PROPN',
+                                    'p0s': sent[counter]['p0s'],
                                     'grammemes': 'Abbr=Yes',
                                     'deprel': sent[counter]['deprel'],
+                                    'deps': sent[counter]['deps'],
                                     'head': sent[counter]['head'],
+                                    'misc': sent[counter]['misc'],
                                     'SemSlot': sent[counter]['SemSlot'],
                                     'SemClass': sent[counter]['SemClass']}
 
@@ -409,9 +422,12 @@ class Fixes:
                                     'form': to_merge_token + sent[counter + 1]['form'] + sent[counter + 2]['form'],
                                     'lemma': to_merge_token + sent[counter + 1]['lemma'] + sent[counter + 2]['lemma'],
                                     'pos': sent[counter + 2]['pos'],
+                                    'p0s': sent[counter + 2]['p0s'],
                                     'grammemes': sent[counter + 2]['grammemes'],
                                     'deprel': sent[counter + 2]['deprel'],
+                                    'deps': sent[counter + 2]['deps'],
                                     'head': sent[counter + 2]['head'],
+                                    'misc': sent[counter + 2]['misc'],
                                     'SemSlot': sent[counter + 2]['SemSlot'],
                                     'SemClass': sent[counter + 2]['SemClass']}
                     c += 2
@@ -439,9 +455,12 @@ class Fixes:
                                 'form': to_merge_token + sent[counter + 1]['form'],
                                 'lemma': to_merge_token + sent[counter + 1]['lemma'],
                                 'pos': sent[counter + 1]['pos'],
+                                'p0s': sent[counter + 1]['p0s'],
                                 'grammemes': sent[counter + 1]['grammemes'],
                                 'deprel': sent[counter + 1]['deprel'],
+                                'deps': sent[counter + 1]['deps'],
                                 'head': sent[counter + 1]['head'],
+                                'misc': sent[counter + 1]['deprel'],
                                 'SemSlot': sent[counter + 1]['SemSlot'],
                                 'SemClass': sent[counter + 1]['SemClass']}
                     c += 1

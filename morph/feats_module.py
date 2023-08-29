@@ -6,7 +6,7 @@ class Feats_module:
         self.adj_feats = ('Case', 'Gender', 'Number', 'DegreeOfComparison')  # +Anim если это Acc Plur
         self.adv_feats = 'DegreeOfComparison'
         self.noun_feats = ('Animatedness', 'Case', 'Gender', 'Number')
-        self.num_feats = ('Animatedness', 'Case', 'Gender')
+        self.num_feats = ('Animatedness', 'Case', 'Number', 'Gender')
         self.verb_feats = ('Aspect', 'Mood', 'Number', 'Person', 'Tense', 'GrammaticalType', 'Voice', 'Gender')
         self.pron_feats = ('Animatedness', 'Case', 'Gender', 'Number', 'Person')
         self.det_feats = {'Animatedness', 'Case', 'Degree', 'Gender', 'Number'}
@@ -54,7 +54,7 @@ class Feats_module:
 
         self.rel_pron = {'кто', 'что', 'какой', 'чей'}
 
-    def filter_feats(self, token, lemma, pos, feats, label, semrel):
+    def filter_feats(self, token, lemma, pos, p0s, feats, label, semrel):
 
         '''функция для обработки фичей'''
 
@@ -105,6 +105,8 @@ class Feats_module:
                     needed_feat['Animacy'] = 'Inan'
                 else:
                     needed_feat['Animacy'] = 'Anim'
+            if pos == 'ADJ' and p0s == 'Numeral':
+                needed_feat['Degree'] = 'Pos'
 
             if 'Case' in needed_feat:
                 if needed_feat['Case'][0] in self.case_set:
@@ -157,7 +159,7 @@ class Feats_module:
                 else:
                     needed_feat['Number'] = 'Sing'
 
-            if pos in ('VERB', 'AUX') and 'Tense' in needed_feat and needed_feat['Tense'][0] == 'Past' and 'Person' in needed_feat:#проверить[0]
+            if pos in ('VERB', 'AUX') and 'Tense' in needed_feat and needed_feat['Tense'][0] == 'Past' and 'Person' in needed_feat:
                 needed_feat.pop('Person')
             if 'Person' in needed_feat:
                 if needed_feat['Person'][0] in self.person_set:
@@ -165,12 +167,10 @@ class Feats_module:
                 else:
                     needed_feat.pop('Person')
 
-            if 'DegreeOfComparison' in needed_feat:
+            if 'DegreeOfComparison' in needed_feat:                        
                 needed_feat['Degree'] = needed_feat.pop('DegreeOfComparison')
-            if 'Degree' in needed_feat:
                 if needed_feat['Degree'][0] in self.degree_set:
                     needed_feat['Degree'] = self.degree_set[needed_feat['Degree'][0]]
-
             if 'Aspect' in needed_feat:
                 if needed_feat['Aspect'][0] == 'Perfective':
                     needed_feat['Aspect'] = 'Perf'
@@ -255,14 +255,21 @@ class Feats_module:
                 if 'Number' in needed_feat and needed_feat['Number'] == 'Plur':
                     if 'Gender' in needed_feat:
                         needed_feat.pop('Gender')
-
             if token in ('более','менее'):
                 needed_feat['Degree'] = 'Cmp'
 
-            if pos in ('DET', 'ADJ', 'PRON', 'NUM') and 'Number' in needed_feat and 'Animasy' in needed_feat \
+            if pos in ('DET', 'ADJ', 'PRON', 'NUM') and 'Number' in needed_feat and 'Animacy' in needed_feat \
                 and 'Case' in needed_feat and needed_feat['Number'] == 'Plur' and needed_feat['Case'] != 'Acc':
-                needed_feat.pop('Gender')
                 needed_feat.pop('Animacy')
+                if 'Gender' in needed_feat:
+                    needed_feat.pop('Gender')
+            if pos == 'NUM' and 'Case' in needed_feat and needed_feat['Case'] != 'Acc':
+                if 'Animacy' in needed_feat:
+                    needed_feat.pop('Animacy')
+
+
+            if token in re.findall(re.compile(r'\d+'), token) or token in re.findall(re.compile(r'\d+.\d+'), token):
+                needed_feat = '_'
 
             if pos not in ('NOUN', 'PROPN') and 'Gender' in needed_feat and 'Number' in needed_feat and needed_feat['Number'] == 'Plur':
                 needed_feat.pop('Gender')

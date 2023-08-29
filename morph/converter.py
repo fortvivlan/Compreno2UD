@@ -62,6 +62,7 @@ class Converter:
                     out.write(f"# text = {data[sent_id]['text']}\n")
 
                     for word in data[sent_id]['tokens']:
+                        word['p0s'] = word['pos']#это чтобы сохранить старые посы
                         
                         if re.compile(r'\w+- \w+').fullmatch(word['form']):
                             word['form'] = word['form'].replace(' ', '')#!убирает пробел из слова, которое пишется через дефис
@@ -92,13 +93,19 @@ class Converter:
                         if type(word['grammemes']) == str:
                             ud_feats = word['grammemes']
                         else:
-                            new_feats = self.feats_module.filter_feats(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'], word['SemClass'])
+                            new_feats = self.feats_module.filter_feats(word['form'], word['lemma'], word['pos'], word['p0s'], word['grammemes'], word['SemSlot'], word['SemClass'])
+                            if word['misc'] == None:
+                                word['misc'] = '_'
                             if type(new_feats) == str:
                                 ud_feats = new_feats
                             else:
                                 ud_feats = '|'.join(new_feats)
+                        if word['misc'] == 'None':
+                            word['misc'] = '_'
+                        else:
+                            word['misc'] = word['misc']
 
-                        out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t_\t{ud_feats}\t{word['head']}\t{word['deprel']}\tdeps\tmisc\t{word['SemSlot']}\t{word['SemClass']}\n")
+                        out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\t{word['deps']}\t{word['misc']}\t{word['SemSlot']}\t{word['SemClass']}\n")
                         word_counter -= 1
                         if word_counter == 0:
                             break
@@ -148,6 +155,7 @@ class Converter:
                         word['p0s'] = word['pos']#это чтобы сохранить старые посы
                         word['pos'] = self.pos_module_en.convert_pos_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemClass'])
                         word['lemma'] = self.fix_lemmas_en.fix_lemmas_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'])
+                    
                         if word['form'].lower() in bounded_token_list:
                             bounded = 1
                     if bounded:
@@ -180,8 +188,6 @@ class Converter:
                         else:
                             word['misc'] = word['misc']
                         
-
-                                
                         out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\t{word['deps']}\t{word['misc']}\t{word['SemSlot']}\t{word['SemClass']}\n")
                         word_counter -= 1
                         if word_counter == 0:
