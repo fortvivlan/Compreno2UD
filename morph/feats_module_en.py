@@ -7,12 +7,12 @@ class Feats_module_en:
         self.posspron = {'Her', 'His', 'Its', 'My', 'Our', 'Their', 'her', 'his', 'its', 'my', 'our', 'their', 'your', 'whose'}
         self.abbr_set = {'Abbreviation', 'Lex_Abbreviation', 'Lex_KgSm', 'Lex_LetterAbbreviation', 'Lex_LetterDotAbbreviation'}
         self.adj_feats = ('DegreeOfComparison', 'SyntacticParadigm', 'PartletOfSpeech')
-        self.adv_feats = ('DegreeOfComparison','SyntacticParadigm')
+        self.adv_feats = ('DegreeOfComparison','SyntacticParadigm', 'TypeOfWH_ForLexicalClasses')
         self.noun_feats = ('Number', 'SyntacticParadigm')
         self.num_feats = ('NumType', 'PartletOfSpeech', 'SpecialNumbers')
         self.verb_feats = ('Mood', 'Number', 'Person', 'Tense', 'Type', 'FiniteClass', 'SyntVoice', 'GrammaticalType', 'PresenceOfAuxiliaryVerb')
-        self.pron_feats = ('Case', 'Gender', 'Number', 'Person', 'TypeOfAnaphoricPronoun', 'TypeOfReferenceAndFinalQuantification')
-        self.det_feats = {'Degree', 'Number', 'PartletOfSpeech'}
+        self.pron_feats = ('Case', 'Gender', 'Number', 'Person', 'TypeOfAnaphoricPronoun', 'TypeOfReferenceAndFinalQuantification', 'TypeOfWH_ForLexicalClasses')
+        self.det_feats = {'Degree', 'Number', 'PartletOfSpeech', 'TypeOfWH_ForLexicalClasses'}
         self.ind_pron = {'Any', 'IndefSome'}
 
         self.pos_feats = {'ADJ': self.adj_feats,
@@ -45,7 +45,7 @@ class Feats_module_en:
                         'SubjunctivePresent': 'Sub',
                         'Indicative': 'Ind'} #Indicative
         
-    def filter_feats_en(self, token, lemma, pos, feats, semclass, semslot):
+    def filter_feats_en(self, token, lemma, pos, feats, deprel, semclass, semslot):
             '''обработка фичей'''
             '''abbr_check = 0 #проверяем аббревиатуры
             foreign_check = 0 #проверяем иностранные слова (как?)
@@ -117,7 +117,7 @@ class Feats_module_en:
 
                     #опять с причастиями и герундиями разребем (надеюсь, что сработает как для лексических глаголов)
                     elif needed_feat['GrammaticalType'][0] == 'GTParticiple':
-                        #это для причастий 1 типа, по идее герундии сюда не входят (умоляю, пусть не входят..)
+                        #это для причастий 1 типа, по идее герундии сюда не входят
                         if needed_feat['Type'][0] == 'ParticipleOne' and 'PresenceOfAuxiliaryVerb' in needed_feat and needed_feat['PresenceOfAuxiliaryVerb'][0] == 'AuxPlus':
                             needed_feat['VerbForm'] = 'Part'
                             needed_feat['Tense'] == 'Pres'
@@ -157,6 +157,12 @@ class Feats_module_en:
                         needed_feat['Case'] = 'Gen'#whose не в генетиве upd: хотя в документации к местоимениям есть вот такая строчка TODO: add Case=Gen for whose
                         needed_feat['Poss'] = 'Yes'#для притяжательных местоимений
                                         #с местоимениями жопа кстати! 
+                if 'TypeOfWH_ForLexicalClasses' in needed_feat: 
+                    if needed_feat['TypeOfWH_ForLexicalClasses'][0] == 'Interrog_LC':
+                        needed_feat.pop('TypeOfWH_ForLexicalClasses')
+                        needed_feat = 'PronType=Int'
+                    else:
+                        needed_feat.pop('TypeOfWH_ForLexicalClasses')
                 #фича Reflex=Yes
                 if pos == 'PRON':
                     if 'TypeOfAnaphoricPronoun' in needed_feat and needed_feat['TypeOfAnaphoricPronoun'][0] == 'Reflexive_Syntactic':
@@ -166,10 +172,14 @@ class Feats_module_en:
                 if pos == 'PRON':
                     if 'TypeOfAnaphoricPronoun' in needed_feat and needed_feat['TypeOfAnaphoricPronoun'][0] == 'Reciprocal':
                         needed_feat.pop('TypeOfAnaphoricPronoun')
-                        needed_feat['PronType'] = 'Rcp'#ach other's есть в лексемах с пробелами! с ними надо КОНКРЕТНО разобраться, а PronType=Rcp добавить для each
+                        needed_feat['PronType'] = 'Rcp'#each other's есть в лексемах с пробелами! а PronType=Rcp добавить для each - добавила в .csv
                     
                     if lemma.lower() in self.posspron or lemma in self.pers_pron:
                         needed_feat['PronType'] = 'Prs'
+                    if lemma.lower() == 'all' or lemma.lower() == 'both':
+                        needed_feat['PronType'] = 'Tot'
+                        if 'Person' in needed_feat:
+                            needed_feat.pop('Person')
 
                     if 'TypeOfReferenceAndFinalQuantification' in needed_feat and needed_feat['TypeOfReferenceAndFinalQuantification'][0] in self.ind_pron:
                         needed_feat.pop('TypeOfReferenceAndFinalQuantification')
@@ -197,6 +207,11 @@ class Feats_module_en:
                         needed_feat['PronType'] = 'Art'
                     else:
                         needed_feat.pop('PartletOfSpeech')
+                    if lemma.lower() == 'all' or lemma.lower() == 'both':
+                        needed_feat['PronType'] = 'Tot'
+                        if 'Person' in needed_feat:
+                            needed_feat.pop('Person')
+                    
 
                         # relative and interrogative prons (WDT, WP, WP$ or WRB) будут зависеть от синтаксиса (если у их вершины будет dep acl:relcl, то это rel, если нет, то int)
                                                 
@@ -308,7 +323,7 @@ class Feats_module_en:
                     elif token in re.findall(re.compile(r'[A-za-z]+'), token):
                         needed_feat['NumForm'] = 'Word'
                     elif token in re.findall(re.compile(r'\d+'), token) or token in re.findall(re.compile(r'\d+.\d+'), token):
-                        needed_feat['NumForm'] = 'Digit'
+                        needed_feat['NumForm'] = 'Digit'#вроде решили все фичи убрать числам, которые не буквами написаны
 
                 if semclass == '#ACRONYM' and token in {'I', 'II'}:
                     needed_feat['NumForm'] = 'Roman'  

@@ -11,7 +11,6 @@ class Fixes_en:
                                 '#ElliptedVerb',
                                 '#Expression',
                                 '#Number',
-
                                 '#Substantivizer',
                                 '#UnknownName',
                                 '#UnknownWord',
@@ -27,7 +26,6 @@ class Fixes_en:
         if lemma in self.hash_lemma_set:
             lemma = token
 
-
         if token.lower() == 'she':
             lemma = 'she'
         elif token.lower() == 'it':
@@ -39,10 +37,9 @@ class Fixes_en:
         elif token.lower() == 'her' and lemma == 'he':
             lemma = 'she'#у нас есть два вида her(омонимичных), у одного правильно лемма her стоит, у другого he, его мы и исправляем
 
-
-
-
         return lemma
+    
+
 
     #def divide_words(self, sent):
         '''
