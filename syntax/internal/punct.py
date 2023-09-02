@@ -271,9 +271,15 @@ class Punctuation:
         fordel = []
         for idx, a in apos:
             try:
-                if sent['tokens'][idx + 1]['form'].lower() in {'ll', 's', 've', 'd', 're', 'm'}:
-                    sent['tokens'][idx + 1]['form'] = f"'{sent['tokens'][idx + 1]['form'].lower()}"
+                if sent['tokens'][idx + 1]['form'].lower() == 's' and sent['tokens'][idx + 1]['SemClass'] != 'AUXILIARY_VERBS':
+                    sent['tokens'][idx - 1]['form'] = f"{sent['tokens'][idx - 1]['form']}'{sent['tokens'][idx + 1]['form']}"
                     fordel.append(a)
+                    fordel.append(sent['tokens'][idx - 1])
+                elif sent['tokens'][idx + 1]['form'].lower() in {'ll', 's', 've', 'd', 're', 'm'}:
+                    sent['tokens'][idx + 1]['form'] = f"'{sent['tokens'][idx + 1]['form']}"
+                    sent['tokens'][idx - 1]['misc'] = 'SpaceAfter=No'
+                    fordel.append(a)
+                    
             except IndexError:
                 a['head'] = self.senthead
         if fordel:
