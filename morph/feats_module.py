@@ -74,7 +74,7 @@ class Feats_module:
         for f in self.short_set:
             if 'AdjectiveShortness' in feats and feats['AdjectiveShortness'] == f:
                 short_check = 1
-
+         
         if pos in self.pos_feats:
             needed_feat = {k: v for k, v in feats.items() if k in self.pos_feats[pos]}
             if 'GrammaticalType' in needed_feat:
@@ -126,7 +126,7 @@ class Feats_module:
             if label == 'OrderInTimeAndSpace' and semrel == 'DIGITAL_NUMBER' \
                 or semrel == 'DAY_NUMBER':
                     needed_feat = '_'#добавила, чтобы убрать фичи у чисел дат и годов
-
+                        
             if 'Gender' in needed_feat:
                 if needed_feat['Gender'][0] == 'Feminine' or 'SyntacticGender' in feats and feats['SyntacticGender'] == 'SyntFeminine':
                     needed_feat['Gender'] = 'Fem'

@@ -21,6 +21,7 @@ class Converter:
         self.wordline_pattern = re.compile(r'^.+?\t.+?[A-Za-z]+')
         self.foreign_bounded_token = re.compile(r'[A-za-z]+ [A-za-z]+')
         self.number_bounded = re.compile(r'\d+,?\d*?-\d+,?\d*?')
+        self.s_bounded = re.compile(r'[A-za-z]+\'s')
         self.hasch_number = re.compile(r'\d+#:\d+')
         self.mwe = mwe
         self.infile = infile
@@ -158,8 +159,14 @@ class Converter:
                     
                         if word['form'].lower() in bounded_token_list:
                             bounded = 1
+                        if self.s_bounded.fullmatch(word['form']):
+                            bounded_fgn = 1
                     if bounded:
                         self.fixes.indexation_bounded_csv(data[sent_id]['tokens'], csv_dict, bounded_token_list)
+                    if bounded_fgn:
+                        self.fix_lemmas_en.bounded_s(data[sent_id]['tokens'])
+                    #self.fixes.merge(data[sent_id]['tokens'])
+                    
 
                     for word in data[sent_id]['tokens']:
                         word_counter = len(data[sent_id]['tokens'])
