@@ -22,7 +22,9 @@ class Converter:
         self.foreign_bounded_token = re.compile(r'[A-za-z]+ [A-za-z]+')
         self.number_bounded = re.compile(r'\d+,?\d*?-\d+,?\d*?')
         self.s_bounded = re.compile(r'[A-za-z]+\'s')
+        self.s1_bounded = re.compile(r'[A-za-z]+s\'')
         self.hasch_number = re.compile(r'\d+#:\d+')
+        self.neg_bounded = re.compile(r'[A-za-z]+n\'t')
         self.mwe = mwe
         self.infile = infile
         self.outfile = outfile
@@ -149,6 +151,7 @@ class Converter:
                     print(data[i]['text'])
                     bounded = 0
                     bounded_fgn = 0
+                    bounded_neg = 0
                     out.write(f"# sent_id = {sent_id + 1}\n")
                     out.write(f"# text = {data[sent_id]['text']}\n")
 
@@ -159,13 +162,20 @@ class Converter:
                     
                         if word['form'].lower() in bounded_token_list:
                             bounded = 1
+                        if self.neg_bounded.fullmatch(word['form']):
+                            bounded_fgn = 1
                         if self.s_bounded.fullmatch(word['form']):
                             bounded_fgn = 1
+                        if self.s1_bounded.fullmatch(word['form']):
+                            bounded_fgn = 1
+
                     if bounded:
                         self.fixes.indexation_bounded_csv(data[sent_id]['tokens'], csv_dict, bounded_token_list)
                     if bounded_fgn:
                         self.fix_lemmas_en.bounded_s(data[sent_id]['tokens'])
-                    #self.fixes.merge(data[sent_id]['tokens'])
+
+                    self.fix_lemmas_en.new_line1(data[sent_id]['tokens'])
+
                     
 
                     for word in data[sent_id]['tokens']:
