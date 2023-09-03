@@ -207,8 +207,8 @@ class Fixes:
                             if new_word['head'] != 0:#если не вершина
                                 new_word['head'] = new_word['id'] - new_word['head']
                                 new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}'
-                                if part['pos'] == 'ADP':
-                                    new_word['deps'] = f'{new_word["head"]}:{word["deprel"]}:case'
+                                if part['pos'] == 'ADP' and part['deprel']== 'obl':
+                                    new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}:case'
                             else:#если вершина
                                 new_word['head'] = word['head']
                                 new_word['SemSlot'] = word['SemSlot']
