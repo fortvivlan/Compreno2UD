@@ -3,8 +3,8 @@ class Feats_module_en:
     def __init__(self):
         self.neg_set = {'no', 'not', 'nothing', 'never'}# еще тут должны быть слова на 'un-', 'im-', 'dis-', но их ведь не захардкодить, а в фичах вроде нет ничего такого
         self.pers_pron_sing = {'he', 'his', 'him', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself'}
-        self.pers_pron = {'I', 'me', 'my', 'he', 'him', 'his','himself','she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'we', 'us', 'ourselves', 'they', 'them', 'their', 'themselves', 'you', 'your', 'yourself'}
-        self.posspron = {'Her', 'His', 'Its', 'My', 'Our', 'Their', 'her', 'his', 'its', 'my', 'our', 'their', 'your', 'whose'}
+        self.pers_pron = {'i', 'me', 'my', 'he', 'him', 'his','himself','she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'we', 'us', 'ourselves', 'they', 'them', 'their', 'themselves', 'you', 'your', 'yourself'}
+        self.posspron = {'her', 'his', 'its', 'my', 'our', 'their', 'your', 'whose'}
         self.abbr_set = {'Abbreviation', 'Lex_Abbreviation', 'Lex_KgSm', 'Lex_LetterAbbreviation', 'Lex_LetterDotAbbreviation'}
         self.adj_feats = ('DegreeOfComparison', 'SyntacticParadigm', 'PartletOfSpeech')
         self.adv_feats = ('DegreeOfComparison','SyntacticParadigm', 'TypeOfWH_ForLexicalClasses')
@@ -38,7 +38,8 @@ class Feats_module_en:
 
         self.degree_set = {'DegreeSuperlative': 'Sup',
                             'DegreePositive': 'Pos',
-                            'DegreeComparative': 'Cmp'}
+                            'DegreeComparative': 'Cmp'
+                            ''}
 
         self.mood_set = {'Imperative': 'Imp',
                         'SubjunctivePast': 'Sub',
@@ -145,7 +146,7 @@ class Feats_module_en:
                         needed_feat.pop('PresenceOfAuxiliaryVerb')
 
                 if 'Case' in needed_feat:
-                    if needed_feat['Case'][0] in self.case_set and lemma in self.pers_pron: 
+                    if needed_feat['Case'][0] in self.case_set and lemma.lower() in self.pers_pron: 
                         needed_feat['Case'] = self.case_set[needed_feat['Case'][0]]
                     else:
                         needed_feat.pop('Case')
@@ -153,10 +154,10 @@ class Feats_module_en:
                 if 'Case' in needed_feat:
                     # почему-то эта строчка не работает, понять никак не могу почему, цикл выше был похожим и тоже не работал, так что я захардкодила местоимения..... upd: все поняла 
                     # if pos == 'PRON' and 'Possessiveness' in needed_feat and needed_feat['Possessiveness'][0] == 'Possessive':
-                    if lemma in self.posspron: 
+                    if lemma.lower() in self.posspron: 
                         needed_feat['Case'] = 'Gen'#whose не в генетиве upd: хотя в документации к местоимениям есть вот такая строчка TODO: add Case=Gen for whose
                         needed_feat['Poss'] = 'Yes'#для притяжательных местоимений
-                                        #с местоимениями жопа кстати! 
+                                        
                 if 'TypeOfWH_ForLexicalClasses' in needed_feat: 
                     if needed_feat['TypeOfWH_ForLexicalClasses'][0] == 'Interrog_LC':
                         needed_feat.pop('TypeOfWH_ForLexicalClasses')
@@ -174,7 +175,7 @@ class Feats_module_en:
                         needed_feat.pop('TypeOfAnaphoricPronoun')
                         needed_feat['PronType'] = 'Rcp'#each other's есть в лексемах с пробелами! а PronType=Rcp добавить для each - добавила в .csv
                     
-                    if lemma.lower() in self.posspron or lemma in self.pers_pron:
+                    if lemma.lower() in self.posspron or lemma.lower() in self.pers_pron:
                         needed_feat['PronType'] = 'Prs'
                     if lemma.lower() == 'all' or lemma.lower() == 'both':
                         needed_feat['PronType'] = 'Tot'
@@ -197,20 +198,28 @@ class Feats_module_en:
                         needed_feat.pop('Person')
 
                 if pos == 'DET':
-                    if 'PartletOfSpeech' in needed_feat and needed_feat['PartletOfSpeech'][0] == 'ArticleIndefinite':
+                    #артикли
+                    if 'PartletOfSpeech' in needed_feat and needed_feat['PartletOfSpeech'][0] == 'ArticleIndefinite' and lemma.lower() in {'a', 'an', 'the'}:
                         needed_feat.pop('PartletOfSpeech')
                         needed_feat['Definite'] = 'Ind'
                         needed_feat['PronType'] = 'Art'
-                    elif 'PartletOfSpeech' in needed_feat and needed_feat['PartletOfSpeech'][0] == 'ArticleDefinite':
+                    elif 'PartletOfSpeech' in needed_feat and needed_feat['PartletOfSpeech'][0] == 'ArticleDefinite' and lemma.lower() in {'a', 'an', 'the'}:
                         needed_feat.pop('PartletOfSpeech')
                         needed_feat['Definite'] = 'Def'
                         needed_feat['PronType'] = 'Art'
-                    else:
+                    elif 'PartletOfSpeech' in needed_feat:
                         needed_feat.pop('PartletOfSpeech')
+                    #prontype=tot
                     if lemma.lower() == 'all' or lemma.lower() == 'both':
                         needed_feat['PronType'] = 'Tot'
-                        if 'Person' in needed_feat:
-                            needed_feat.pop('Person')
+                    #и тем, и другим число и лицо не нужно
+                    if 'Person' in needed_feat:
+                        needed_feat.pop('Person')
+                    if semclass == 'DEMONSTRATIVE':
+                        needed_feat['PronType'] = 'Dem'
+                    elif 'Number' in needed_feat:
+                        needed_feat.pop('Number')
+
                     
 
                         # relative and interrogative prons (WDT, WP, WP$ or WRB) будут зависеть от синтаксиса (если у их вершины будет dep acl:relcl, то это rel, если нет, то int)
@@ -253,6 +262,7 @@ class Feats_module_en:
                 if 'Degree' in needed_feat:
                     if needed_feat['Degree'][0] in self.degree_set:
                         needed_feat['Degree'] = self.degree_set[needed_feat['Degree'][0]]
+
                 
                 '''наклонения'''
                 if 'Mood' in needed_feat:
@@ -277,7 +287,7 @@ class Feats_module_en:
                         needed_feat.pop('Tense')
 
                 #добавляем фичи числам: Card, Ord, Mult, Frac
-                if pos == 'ADV' and lemma in {'once', 'twice'}:
+                if pos == 'ADV' and lemma.lower() in {'once', 'twice'}:
                     needed_feat['NumType'] = 'Mult'
 
                 if pos == 'NUM':
@@ -288,6 +298,9 @@ class Feats_module_en:
                         needed_feat['NumType'] = 'Card'                        
                     elif 'PartletOfSpeech' in needed_feat:
                         needed_feat.pop('PartletOfSpeech')
+
+                if pos == 'ADV' and 'DefectnessOfComparison' in feats and lemma.lower() not in {'once', 'twice'} and lemma.lower() not in self.neg_set:
+                    needed_feat = '_'
 
                 if pos == 'ADJ':
                     if 'PartletOfSpeech' in needed_feat and needed_feat['PartletOfSpeech'][0] == 'NumeralOrdinal':
@@ -328,11 +341,13 @@ class Feats_module_en:
                 if semclass == '#ACRONYM' and token in {'I', 'II'}:
                     needed_feat['NumForm'] = 'Roman'  
                         
-                if 'SpecialLexemes' in feats and feats['SpecialLexemes'][0] in self.abbr_set and token == lemma and pos != 'NUM':
+                if 'SpecialLexemes' in feats and feats['SpecialLexemes'][0] in self.abbr_set and token.lower() == lemma.lower() and pos != 'NUM':
                     needed_feat['Abbr'] = 'Yes'
 
-                if lemma in self.neg_set:#здесь еще надо поработать, мб как-то повытаскивать. захардкодить не получится
+                if lemma.lower() in self.neg_set:#здесь еще надо поработать, мб как-то повытаскивать. захардкодить не получится
                     needed_feat['Polarity'] = 'Neg'
+
+
 
                 if type(needed_feat) == str:
                     needed_feats = needed_feat

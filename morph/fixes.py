@@ -5,11 +5,8 @@ import re
 
 class Fixes:
     def __init__(self, path, invariable):
-        #self.path = r'C:\Users\пк\Desktop\compreno2UD (new)\morphology\ImpToPerf.txt'
-        #self.invariable = r'C:\Users\пк\Desktop\compreno2UD (new)\morphology\pos_invariable.txt'
         self.path = path
         self.invariable = invariable
-        # 'SpecialLexemes': 'Lex_KgSm'
         self.kg_sm_set = {'м': 'метр',
                     'тыс.': 'тысяча',
                     'млн.': 'миллион',
@@ -136,10 +133,12 @@ class Fixes:
         return lemma
     
     def check_verb_lemmas(self, lemma, pos):
+
         """
         Возвращает список лемм, которых нет в
         списке на конвертацию из совершенного в несовершенный вид.
         """
+        
         absent_verbs = []
 
         with open(self.path, 'r', encoding='utf8') as perfect_txt:
@@ -207,8 +206,8 @@ class Fixes:
                             if new_word['head'] != 0:#если не вершина
                                 new_word['head'] = new_word['id'] - new_word['head']
                                 new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}'
-                                if part['pos'] == 'ADP':
-                                    new_word['deps'] = f'{new_word["head"]}:{word["deprel"]}:case'
+                                if part['pos'] == 'ADP' and part['deprel']== 'obl':
+                                    new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}:case'
                             else:#если вершина
                                 new_word['head'] = word['head']
                                 new_word['SemSlot'] = word['SemSlot']

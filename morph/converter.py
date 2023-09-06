@@ -21,7 +21,10 @@ class Converter:
         self.wordline_pattern = re.compile(r'^.+?\t.+?[A-Za-z]+')
         self.foreign_bounded_token = re.compile(r'[A-za-z]+ [A-za-z]+')
         self.number_bounded = re.compile(r'\d+,?\d*?-\d+,?\d*?')
+        self.s_bounded = re.compile(r'[A-za-z]+\'s')
+        self.s1_bounded = re.compile(r'[A-za-z]+s\'')
         self.hasch_number = re.compile(r'\d+#:\d+')
+        self.neg_bounded = re.compile(r'[A-za-z]+n\'t')
         self.mwe = mwe
         self.infile = infile
         self.outfile = outfile
@@ -53,7 +56,7 @@ class Converter:
                 for line in f:
                     data.append(json.loads(line))
                 sent_id = 0
-                for i in range(len(data) - 1):
+                for i in range(len(data)):
                     print('Конвертация ...')
                     print(data[i]['text'])
                     bounded = 0
@@ -143,23 +146,37 @@ class Converter:
                 for line in f:
                     data.append(json.loads(line))
                 sent_id = 0
-                for i in range(len(data) - 1):
+                for i in range(len(data)):
                     print('Конвертация ...')
                     print(data[i]['text'])
                     bounded = 0
                     bounded_fgn = 0
+                    bounded_neg = 0
                     out.write(f"# sent_id = {sent_id + 1}\n")
                     out.write(f"# text = {data[sent_id]['text']}\n")
 
                     for word in data[sent_id]['tokens']:
                         word['p0s'] = word['pos']#это чтобы сохранить старые посы
-                        word['pos'] = self.pos_module_en.convert_pos_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemClass'])
+                        word['pos'] = self.pos_module_en.convert_pos_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['deprel'], word['SemClass'])
                         word['lemma'] = self.fix_lemmas_en.fix_lemmas_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'])
                     
                         if word['form'].lower() in bounded_token_list:
                             bounded = 1
+                        if self.neg_bounded.fullmatch(word['form']):
+                            bounded_fgn = 1
+                        if self.s_bounded.fullmatch(word['form']):
+                            bounded_fgn = 1
+                        if self.s1_bounded.fullmatch(word['form']):
+                            bounded_fgn = 1
+
                     if bounded:
                         self.fixes.indexation_bounded_csv(data[sent_id]['tokens'], csv_dict, bounded_token_list)
+                    if bounded_fgn:
+                        self.fix_lemmas_en.bounded_s(data[sent_id]['tokens'])
+
+                    self.fix_lemmas_en.new_line1(data[sent_id]['tokens'])
+
+                    
 
                     for word in data[sent_id]['tokens']:
                         word_counter = len(data[sent_id]['tokens'])
@@ -176,6 +193,7 @@ class Converter:
                             if type(new_feats) == str:
                                 ud_feats = new_feats
                             else:
+                                
                                 ud_feats = '|'.join(new_feats)
                         if 'ReferenceClass' in word['grammemes'] and word['grammemes']['ReferenceClass'][0] == 'RCRelative':
                             for word1 in data[sent_id]['tokens']:
