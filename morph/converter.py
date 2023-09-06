@@ -56,7 +56,7 @@ class Converter:
                 for line in f:
                     data.append(json.loads(line))
                 sent_id = 0
-                for i in range(len(data) - 1):
+                for i in range(len(data)):
                     print('Конвертация ...')
                     print(data[i]['text'])
                     bounded = 0
@@ -146,7 +146,7 @@ class Converter:
                 for line in f:
                     data.append(json.loads(line))
                 sent_id = 0
-                for i in range(len(data) - 1):
+                for i in range(len(data)):
                     print('Конвертация ...')
                     print(data[i]['text'])
                     bounded = 0
@@ -157,7 +157,7 @@ class Converter:
 
                     for word in data[sent_id]['tokens']:
                         word['p0s'] = word['pos']#это чтобы сохранить старые посы
-                        word['pos'] = self.pos_module_en.convert_pos_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemClass'])
+                        word['pos'] = self.pos_module_en.convert_pos_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['deprel'], word['SemClass'])
                         word['lemma'] = self.fix_lemmas_en.fix_lemmas_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'])
                     
                         if word['form'].lower() in bounded_token_list:
@@ -193,6 +193,7 @@ class Converter:
                             if type(new_feats) == str:
                                 ud_feats = new_feats
                             else:
+                                
                                 ud_feats = '|'.join(new_feats)
                         if 'ReferenceClass' in word['grammemes'] and word['grammemes']['ReferenceClass'][0] == 'RCRelative':
                             for word1 in data[sent_id]['tokens']:
