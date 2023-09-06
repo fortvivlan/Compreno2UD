@@ -17,17 +17,9 @@ class Pos_module_en:
                     'Article': 'DET',
                     'Invariable': ''}#словарик для частей речи
 
-        '''self.det_set = {'такой', 'какой', 'всякий',
-                            'некоторый', 'никакой', 'некий', 'сей', 'чей',
-                            'какой-либо', 'какой-нибудь','кое-какой',
-                            'весь', 'этот', 'тот', 'каждый',
-                            'мой', 'твой', 'ваш', 'наш', 'свой',
-                            'любой', 'каждый', 'какой-то', 'некоторый', 'такой-то',
-                            'чей-то', 'чей-либо', 'кой', 'никой'}#set для det'''
-
         self.symb_set = {'%', '$', '№', '°', '€','£', '+', '=', '#', '@', '~', '^', '\\','/', '&'}#set для symb
 
-    def convert_pos_en(self, token, lemma, pos_tag, feats, semclass) -> str:
+    def convert_pos_en(self, token, lemma, pos_tag, feats,deprel, semclass) -> str:
 
         '''функция для обработки частей речи'''
 
@@ -68,6 +60,10 @@ class Pos_module_en:
         if lemma == '#Acronym' and pos_tag == 'Invariable':
             pos_tag = 'PROPN'
         #Pron_to_det = {'их', 'его', 'Их', 'Его'}
+        if pos_tag == 'ADJ' and lemma.lower() in 'all':
+            pos_tag = 'DET'
+        elif deprel == 'det' or deprel == 'det:predet':
+            pos_tag = 'DET'
 
 
         if token in self.symb_set:

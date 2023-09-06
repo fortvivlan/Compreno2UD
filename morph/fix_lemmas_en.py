@@ -17,7 +17,8 @@ class Fixes_en:
                                 '#where',
                                 '#which'}#для русского сетик был больше, но в этом датасете были только такие леммы с хэштегом
 
-        self.abbrs = {'m': 'million'}
+        self.abbrs = {'m.': 'million',
+                      'm': 'million'}#здесь переделать, давать лемму еще по семантике
         
     def fix_lemmas_en(self, token, lemma, pos, feats, semslot) -> str:
         """
@@ -68,39 +69,6 @@ class Fixes_en:
             divided_words = []
             '''план для 's такой:
                 все токены с апострофом разбиваю, а потом по фичам слитого токена смотрю как чего приписывать'''
-    def new_line(self, sent):
-        new_line = []
-        for word in sent:
-            if word['form'] == '\'d':
-                new_word = {'id': f'{word["id"]-1}-{word["id"]}', 'form':  f' {word["form"]}', 'lemma': '_', 'pos': '_', 'p0s': '_', 'grammemes': '_',
-                        'head': '_', 'deprel': '_', 'deps': '_', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
-                new_line.append(new_word)
-                dic = {k: k for k in range(1, len(sent))}
-                start = sent.index(word)
-                for i in new_line:
-                    sent.insert(start, i)
-                    start += 1
-                stop = sent.index(word)
-                sent.remove(word)
-                for old_word in sent[stop:]:
-                    old_word['id'] += len(new_line) - 2
-                count = 1
-                for i in range(len(sent)):
-                    if sent[i]['SemClass'] == '__':
-                        continue
-                    else:
-                        dic[count] = sent[i]['id']
-                        count += 1
-                for i in range(len(sent)):
-                    if sent[i]['SemClass'] == '__':
-                        sent[i]['SemClass'] = '_'
-                        continue
-                    else:
-                        for item in dic:
-                            if sent[i]['head'] == item:
-                                sent[i]['head'] = dic[item]
-                                break
-                break
 
     
     def bounded_s(self, sent):
