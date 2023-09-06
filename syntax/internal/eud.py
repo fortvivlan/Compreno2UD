@@ -23,6 +23,13 @@ class EnhancedConverter:
                 conjdict[c['head']].append(c)
         for cluster in conjdict:
             if len(conjdict[cluster]) == 1:
+                single = conjdict[cluster][0]
+                potentials = [t for t in sent['tokens'] if t['SurfSlot'] == single['SurfSlot'] and t['id'] != single['id']]
+                if potentials and potentials[0]['deprel'] == 'cop':
+                    cophead = [t for t in sent['tokens'] if t['id'] == potentials[0]['head']][0]
+                    single['deprel'] = 'conj'
+                    single['deps'] = f"{cophead['id']}:conj|{single['head']}:{cophead['deprel']}"
+                    single['head'] = cophead['id']
                 continue
             conjdict[cluster][0]['deps'] = f"{conjdict[cluster][0]['head']}:{conjdict[cluster][0]['deprel']}"
             for c in conjdict[cluster][1:]:
@@ -132,9 +139,17 @@ class EnhancedConverter:
         
             if token['deprel'] in {'obl', 'nmod'}:
                 if case and 'case' in deps:
-                    token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case'].replace(' ', '_')}:{self.casedict[case]}"
+                    if deps['case'] == 'such':
+                        deps['case'] = 'such_as'
+                    if self.lang == 'Ru':
+                        token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case'].replace(' ', '_')}:{self.casedict[case]}"
+                    else:
+                        token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case'].replace(' ', '_')}"
                 elif case:
-                    token['deps'] = f"{token['head']}:{token['deprel']}:{self.casedict[case]}"
+                    if self.lang == 'Ru':
+                        token['deps'] = f"{token['head']}:{token['deprel']}:{self.casedict[case]}"
+                    else:
+                        token['deps'] = f"{token['head']}:{token['deprel']}"
             if token['deprel'] in {'advcl', 'acl'} and 'mark' in deps:
                 token['deps'] = f"{token['head']}:{token['deprel']}:{deps['mark'].replace(' ', '_')}"
     
