@@ -12,7 +12,7 @@ class DeprelConverter:
 
         if lang == 'En':
             self.detlist = {'any'} # dunno if I'll need that
-            self.discourse = set()
+            self.discourse = {'yes', 'yeah'}
             self.advmods = {'most'} 
             self.composite = set()
 
@@ -26,14 +26,15 @@ class DeprelConverter:
         'Specification_ParentheticalAttribution', 'TextStructure', 'Parenthetical_Habitualness', 'PragmaticDefinition'} # semslots: replace with surfslots?
         self.advcl = {'Clause_Adverbial_ParticiplePhrase', 'Adjunct_Purpose_ЧтобыInfinitive', 'Adjunct_Time_FiniteForm', 
                       'Adjunct_Condition_ParticipleClause', 'Adjunct_Time_Clause', 'Adjunct_Purpose_Infinitive', 'Adjunct_Condition_Clause', 
-                      'OfPostmodifier', 'Adjunct_Condition_Clause', 'Clause_Finite', 'Clause_Infinitive_NoControl', 'Adjunct_Concession_Clause'} # surfslots
+                      'OfPostmodifier', 'Adjunct_Condition_Clause', 'Clause_Finite', 'Clause_Infinitive_NoControl', 'Adjunct_Concession_Clause', 
+                      'Adjunct_Reason_Clause', 'ComparClause_As'} # surfslots
         self.objtypes = {'TypeOfAddressee', 'TypeOfIndirectActant', 'TypeOfAgent', 'TypeOfExperiencer', 'TypeOfContrObject', 'TypeOfObject', 
                          'TypeOfObject_CreationDestruction', 'TypeOfPossessor', 'TypeOfRelation_Correlative', 'TypeOfRelation_Relative', 'TypeOfSource', 'TypeOfSphereSpecial'} # old
         
     def convert(self, sent):
         for token in sent['tokens']:
             # punct
-            if token['grammemes'] == '_' or token['deprel'] == 'conj':
+            if token['grammemes'] == '_' or token['deprel'] in {'cop', 'fixed', 'conj'}:
                 continue 
             #############################
             # get head of token
@@ -52,6 +53,28 @@ class DeprelConverter:
                 case = None
             #############################
 
+            # such as
+            if token['lemma'] == 'such' and sent['tokens'][token['id']]['lemma'] == 'as':
+                token['deprel'] = 'case'
+                deps = [t for t in sent['tokens'] if t['head'] == token['id']]
+                if not deps:
+                    raise Exception # маловероятно
+                deps[0]['head'] = token['head']
+                token['head'] = deps[0]['id']
+                sent['tokens'][token['id']]['head'] = token['id']
+                sent['tokens'][token['id']]['deprel'] = 'fixed'
+                deps[0]['deps'] = f"{deps[0]['head']}:nmod:such_as"
+                if len(deps) > 1:
+                    for d in deps[1:]:
+                        d['head'] = deps[0]['id']
+                        d['deprel'] = 'conj'
+                        d['deps'] = f"{deps[0]['deps']}|{deps[0]['id']}:conj"
+                continue
+
+            # dep, моржи
+            if token['SurfSlot'].startswith('Modifier_Prefixoid') or 'Composite' in token['SurfSlot']:
+                token['deprel'] = 'dep'
+
             # root
             if token['head'] == 0:
                 token['deprel'] = 'root'
@@ -66,12 +89,12 @@ class DeprelConverter:
             if token['form'].lower() == 'бы':
                 token['deprel'] = 'aux'
 
-            # cop - проставляется при свопе
-            if token['SemClass'] == 'BE' and token['SemSlot'] == 'Predicate':
-                token['deprel'] = 'cop'
+            # discourse
+            if token['lemma'] in self.discourse:
+                token['deprel'] = 'discourse'
 
             # case 
-            if token['pos'] == 'Preposition' or token['SurfSlot'] in {'AsLike', 'Than', 'GenitiveS'}: # посмотреть русское как
+            if token['pos'] == 'Preposition' or (token['SurfSlot'] in {'AsLike', 'Than', 'GenitiveS'} and head['pos'] in {'Noun', 'Pronoun'}): # посмотреть русское как
                 token['deprel'] = 'case'
             ## HEAD SWAP ##
             if token['lemma'] == 'согласно':
@@ -87,7 +110,7 @@ class DeprelConverter:
                 continue
 
             # obl - ? 
-            if head['pos'] in {'Verb', 'Adjective', 'Adverb'} and (token['grammemes'].get('ExtendedCaseTransformation') or case in {'Genitive', 'Locative', 'Instrumental', 'Prepositional'} or head['lemma'] == 'согласно'): # lang spec
+            if head['pos'] in {'Verb', 'Adjective', 'Adverb'} and (token['grammemes'].get('ExtendedCaseTransformation') or case in {'Genitive', 'Locative', 'Instrumental', 'Prepositional'}) or head['lemma'] == 'согласно': # lang spec
                 token['deprel'] = 'obl'
             # if self.lang == 'En' and token['SurfSlot'] in self.obliques: # lang spec
             #     token['deprel'] = 'obl'
@@ -101,7 +124,7 @@ class DeprelConverter:
                 token['deprel'] = 'obl:agent'
 
             # obj
-            if token['SurfSlot'] in {'Object_Direct', 'Idiomatic_Object_Direct'} and token['pos'] != 'Verb':
+            if token['SurfSlot'] in {'Object_Direct', 'Idiomatic_Object_Direct', 'Object_Grammatical'} and token['pos'] != 'Verb':
                 token['deprel'] = 'obj'
             
             # iobj
@@ -149,14 +172,10 @@ class DeprelConverter:
                 token['deprel'] = 'cc'
 
             # mark
-            if token['SurfSlot'] in {'Conjunction_DependentClause', 'Correlate_CondTemp'}:
+            if token['SurfSlot'] in {'Conjunction_DependentClause', 'Correlate_CondTemp', 'AsLike'} and head['pos'] not in {'Noun', 'Pronoun'}:
                 token['deprel'] = 'mark'
             if token['SurfSlot'] == 'To' and (head['SurfSlot'] in self.advcl or 'Clause' in head['SurfSlot']):  # en spec
                 token['deprel'] = 'mark'
-
-            # prefixoid, N - летний
-            if token['SurfSlot'].startswith('Modifier_Prefixoid') or token['SurfSlot'] == 'Quantity_Composite':
-                token['deprel'] = 'dep'
 
             # ru det 
             if token['lemma'] in self.detlist or token['SurfSlot'] in {'Article', 'Demonstrative'}: # lang spec - check rus for demonstrative
@@ -190,16 +209,20 @@ class DeprelConverter:
             else:
                 if head['SemSlot'] in self.parataxis or head['SemSlot'] == 'DirectSpeech':
                     token['deprel'] = 'parataxis'
-            if token['SurfSlot'] in {'NominalPostMod_Dash', 'NominalPostModBracket', 'SpecificationClause_Brackets'}: 
+            if token['SurfSlot'] in {'NominalPostMod_Dash', 'NominalPostModBracket', 'SpecificationClause_Brackets', 'NominalPostMod_Colon'}: 
+                token['deprel'] = 'parataxis'
+            # проверка для копулы
+            deps = [t for t in sent['tokens'] if t['head'] == token['id'] and t['deprel'] == 'cop']
+            if deps and 'SpecificationClause' in deps[0]['SurfSlot']: 
                 token['deprel'] = 'parataxis'
 
             # advcl
-            if token['SurfSlot'] in self.advcl and token['pos'] not in {'Noun', 'Pronoun'}: 
+            if token['SurfSlot'] in self.advcl and (token['pos'] not in {'Noun', 'Pronoun'} or token.get('copula')): 
                 token['deprel'] = 'advcl'
 
             # acl
             if head['pos'] in {'Noun', 'Pronoun'} and token['pos'] not in {'Noun', 'Pronoun'}:
-                if token['SemSlot'] == 'ParticipleRelativeClause' or token['SurfSlot'] in self.advcl:
+                if token['SemSlot'] == 'ParticipleRelativeClause' or token['SurfSlot'] in self.advcl or token.get('copulasc') and token['copulasc'] == 'ParticipleRelativeClause':
                     token['deprel'] = 'acl'
                 if token['SurfSlot'] in {'RelativeClause', 'RelativeClause_DirectFiniteThat'}:
                     token['deprel'] = 'acl:relcl'
@@ -209,8 +232,10 @@ class DeprelConverter:
             # xcomp, ccomp
             if token['SurfSlot'] in {'Clause_Infinitive_Control', 'Clause_Infinitive_Raising'} or token['SurfSlot'] == 'Object_Direct' and token['pos'] == 'Verb':
                 token['deprel'] = 'xcomp'
-            elif 'Clause' in token['SurfSlot'] and ('Object' in token['SemSlot'] or token['SemSlot'] == 'State'): # check
+            elif 'Clause' in token['SurfSlot'] and ('Object' in token['SemSlot'] or token['SemSlot'] == 'State' and not token.get('copula')) : # check
                 token['deprel'] = 'ccomp'
+            if token['SurfSlot'].startswith('Complement'): # check!
+                token['deprel'] = 'xcomp'
             ## КОПУЛА - пока в XCOMP
             # dislo = token['SurfSlot'] == 'Dislocation_Right' and token['grammemes'].get('FiniteClass') == ['Infinitive']
             # if (token['SurfSlot'].startswith('Complement') or dislo or token['SurfSlot'] == 'Idiomatic_ParticipleComplement') and token['pos'] != 'Adverb': # and head['SemClass'] == 'BE' and head['SemSlot'] in {'Predicate', 'Relation_Correlative', 'Clause_Finite'}
@@ -260,6 +285,10 @@ class DeprelConverter:
                 # flat:name
                 if 'AnthroponymComponentUsage' in usage:
                     token['deprel'] = 'flat:name'
+
+            # flat
+            if head['grammemes'].get('ClassifyingTemporal') and head['grammemes']['ClassifyingTemporal'] == 'ЧислоМесяца':
+                token['deprel'] == 'flat'
             
             # flat:name 
             if token['SurfSlot'] == 'Modifier_Appositive' and token['SemSlot'] == 'Classifier_Name' and head['grammemes'].get('ArticleUsage') == ['TitleAsAddressForm']:
@@ -277,6 +306,10 @@ class DeprelConverter:
                 token['deprel'] = 'flat:name'
                 token['head'] -= 2
 
+            # flat:foreign
+            if head['grammemes'].get('SpecialLexemes') == ['Lex_Foreign']:
+                token['deprel'] == 'flat:foreign'
+
             # ru spec
             if token['form'].lower() == 'это' and not token['grammemes'].get('Usage'):
                 token['deprel'] = 'expl'
@@ -288,22 +321,35 @@ class DeprelConverter:
                 else:
                     token['deprel'] = 'obl' # временная заглушка
 
+            # expl
+            # ru
+            if token['form'].lower() == 'это' and not token['grammemes'].get('Usage'):
+                token['deprel'] = 'expl'
+            # en
+            if 'EmptySubject' in token['SurfSlot']:
+                token['deprel'] = 'expl'
+
             # including??
             ## HEAD SWAP ##
             if token['form'].lower() == 'including' and token['SurfSlot'] == 'ParticiplePostmodifier':
                 token['deprel'] = 'case'
                 deps = [t for t in sent['tokens'] if t['head'] == token['id']]
-                depheads = [t for t in deps if t['pos'] != 'PUNCT'] # если пунктуация переезжает вниз, redundant
-                if not depheads:
-                    continue # маловероятно 
-                newhead = depheads[0]['id']
+                newhead = deps[0]['id']
+                for dep in deps:
+                    dep['head'] = token['head']
+                token['head'] = newhead
+
+            # like
+            if token['form'].lower() == 'like' and token['SurfSlot'] == 'Modifier_Attributive_Post':
+                token['deprel'] = 'case'
+                deps = [t for t in sent['tokens'] if t['head'] == token['id']]
+                newhead = deps[0]['id']
                 for dep in deps:
                     dep['head'] = token['head']
                 token['head'] = newhead
 
             # DS parataxis
-            check = lambda x: x['grammemes'].get('Usage') == ['PredicativeUsage'] or x['grammemes'].get('Usage') == ['MainUsage'] or x['grammemes'].get('Usage') == ['IdiomaticUsage']
-            headdeps = [t for t in sent['tokens'] if t['head'] == head['id'] and check]
+            headdeps = [t for t in sent['tokens'] if t['head'] == head['id'] and (t['grammemes'].get('Usage') == ['PredicativeUsage'] or t['grammemes'].get('Usage') == ['MainUsage'] or t['grammemes'].get('Usage') == ['IdiomaticUsage'])]
             if head['grammemes'].get('DirectSpeechDiathesis') and (token['deprel'] == 'cop' or not token['deprel']):
                 if head['id'] < token['id']:
                     token['deprel'] = 'parataxis'
@@ -319,7 +365,7 @@ class DeprelConverter:
                         t['deprel'] = 'conj'
                         t['head'] = headdeps[0]['id']
             if not token['deprel']:
-                if token['SemSlot'] == 'DirectSpeech':
+                if token['SemSlot'] == 'DirectSpeech' and headdeps:
                     ### HEAD SWAP ### 
                     head['head'] = headdeps[0]['id']
                     headdeps[0]['head'] = 0

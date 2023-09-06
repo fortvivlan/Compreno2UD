@@ -50,8 +50,13 @@ class Converter:
                 raise Exception 
             depcompl = [t for t in deps if 'Complement' in t['SurfSlot']]
             if depcompl:
+                if depcompl[0]['SurfSlot'] == 'Complement_NominalNP' and depcompl[0]['grammemes'].get('ExtendedCase') == ['ECabout']:
+                    continue
                 head = depcompl[0]
                 depcompl[0]['deprel'] = cop['deprel']
+                depcompl[0]['SurfSlot'] = cop['SurfSlot']
+                depcompl[0]['copula'] = True 
+                depcompl[0]['copulasc'] = cop['SemSlot']
 
             else:
                 head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() != 'это'][0] # костыль хаха
