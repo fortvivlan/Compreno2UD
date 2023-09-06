@@ -1,3 +1,5 @@
+import re
+
 class QuoteException(Exception):
     def __init__(self, sent, cat):
         print(sent)
@@ -161,7 +163,7 @@ class Punctuation:
                 continue
             if i < len(punct) - 1:
                 nextpunc = punct[i + 1]['id'] # right border
-            elif punct[i] == sent['tokens'][-1]: # last pm = always to senthead
+            elif punct[i] == sent['tokens'][-1] or punct[i] == sent['tokens'][-2] and sent['tokens'][-1]['pos'] == 'PUNCT': # last pm = always to senthead
                     punct[i]['head'] = self.senthead
                     break
             else:
@@ -296,10 +298,21 @@ class Punctuation:
             # we move token heads for tokens with id > markfordelete id
             for token in sent['tokens']:
                 if token['id'] > idx:
+                    if type(token['id']) == float:
+                        f = True 
+                        sid = re.compile('\\b' + str(token['id']).replace('.', '\.') + '(?=:)')
+                    else:
+                        f = False 
+                        sid = re.compile('\\b' + str(token['id']) + '(?=:)')
                     deps = [t for t in sent['tokens'] if t['head'] == token['id']]
+                    depseud = [t for t in sent['tokens'] if sid.search(t['deps'])]
+                    # print(token['form'], [(t['form'], t['deps']) for t in depseud])
                     token['id'] -= 1
                     for dep in deps:
                         dep['head'] = token['id']
+                    for dep in depseud:
+                        dep['deps'] = sid.sub(lambda x: str((float(x.group()) if f else int(x.group())) - 1), dep['deps'])
+
             sent['tokens'].remove(delt) # check
         sent['text'] = ''
         for token in sent['tokens']:
