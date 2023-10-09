@@ -312,7 +312,10 @@ class Punctuation:
                         dep['head'] = token['id']
                     for dep in depseud:
                         dep['deps'] = sid.sub(lambda x: str((float(x.group()) if f else int(x.group())) - 1), dep['deps'])
-
+            coref = [t for t in sent['tokens'] if t.get('IsCoref')]
+            for c in coref:
+                if c['IsCoref'] > idx:
+                    c['IsCoref'] -= 1
             sent['tokens'].remove(delt) # check
         sent['text'] = ''
         for token in sent['tokens']:

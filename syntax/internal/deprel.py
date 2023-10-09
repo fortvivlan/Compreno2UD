@@ -6,30 +6,43 @@ class DeprelConverter:
         if lang == 'Ru':
             self.detlist = {'весь', 'этот', 'такой', 'сей', 'любой', 'свой', 'никакой', 'некоторый', 'каждый'}
             self.discourse = {'увы', 'ох', 'тем не менее', 'в частности', 'вот', 'ну'} # надо все же тупо захардкодить всякие ох эй
-            self.advmods = {'именно', 'лишь', 'более', 'наиболее', 'менее', 'наименее', 'всего лишь', 'в общей сложности'}
+            # self.advmod = {'именно', 'лишь', 'более', 'наиболее', 'менее', 'наименее', 'всего лишь', 'в общей сложности'}
             self.composite = {'Composite_cki', 'Composite_cko', 'Composite_ComplexNumeral', 'Composite_e', 'Composite_iko', 'Composite_null', 
                             'Composite_Numeral', 'Composite_NumeralFull', 'Composite_NumeralShort', 'Composite_o', 'Composite_ski', 'Composite_sko', 'Composite_usek'}
 
         if lang == 'En':
             self.detlist = {'any'} # dunno if I'll need that
             self.discourse = {'yes', 'yeah'}
-            self.advmods = {'most'} 
+            # self.advmod = {'most'} 
             self.composite = set()
 
         # non lang spec
-        self.amods = {'Modifier_Attributive', 'Ordinal', 'Modifier_Numeral', 'Modifier_Attributive_UnitOfMeasure', 'Quantifier', 
-                      'Another_Other', 'Idiomatic_ParticiplePremodifier', 'Idiomatic_AdjectivePremodifier', 'Such'}
+        
         self.parataxis = {'Parenthetical_EmotionsBehaviour', 'Parenthetical_Secrecy', 'Parenthetical_ConcreteAbstract', 
                           'ParentheticalAccentuation', 'Parenthetical_Standpoint', 'SourceOfInformation_Parenthetical', 
                           'ParentheticalConcession',  'NonClauseModality', 'ParentheticalSalience', 'ParentheticalOrder', 
         'Coincidence_Parenthetic', 'Parenthetic_ResultOfSummation', 'ParentheticalCondition', 'SourceOfInformation_Parenthetical', 'ParentheticalSpecification', 
         'Specification_ParentheticalAttribution', 'TextStructure', 'Parenthetical_Habitualness', 'PragmaticDefinition'} # semslots: replace with surfslots?
-        self.advcl = {'Clause_Adverbial_ParticiplePhrase', 'Adjunct_Purpose_ЧтобыInfinitive', 'Adjunct_Time_FiniteForm', 
-                      'Adjunct_Condition_ParticipleClause', 'Adjunct_Time_Clause', 'Adjunct_Purpose_Infinitive', 'Adjunct_Condition_Clause', 
-                      'OfPostmodifier', 'Adjunct_Condition_Clause', 'Clause_Finite', 'Clause_Infinitive_NoControl', 'Adjunct_Concession_Clause', 
-                      'Adjunct_Reason_Clause', 'ComparClause_As'} # surfslots
-        self.objtypes = {'TypeOfAddressee', 'TypeOfIndirectActant', 'TypeOfAgent', 'TypeOfExperiencer', 'TypeOfContrObject', 'TypeOfObject', 
-                         'TypeOfObject_CreationDestruction', 'TypeOfPossessor', 'TypeOfRelation_Correlative', 'TypeOfRelation_Relative', 'TypeOfSource', 'TypeOfSphereSpecial'} # old
+        with open('syntax/internal/sslots/amod.txt', encoding='utf8') as f:
+            self.amod = {x.strip() for x in f.readlines()}
+        with open('syntax/internal/sslots/advmod.txt', encoding='utf8') as f:
+            self.advmod = {x.strip() for x in f.readlines()}
+        with open('syntax/internal/sslots/advcl.txt', encoding='utf8') as f:
+            self.advcl = {x.strip() for x in f.readlines()}
+        with open('syntax/internal/sslots/acl.txt', encoding='utf8') as f:
+            self.acl = {x.strip() for x in f.readlines()}
+        with open('syntax/internal/sslots/aclrelcl.txt', encoding='utf8') as f:
+            self.aclrel = {x.strip() for x in f.readlines()}
+        with open('syntax/internal/sslots/oblnmod.txt', encoding='utf8') as f:
+            self.oblnmod = {x.strip() for x in f.readlines()}
+        with open('syntax/internal/sslots/npmod.txt', encoding='utf8') as f:
+            self.npmod = {x.strip() for x in f.readlines()}
+        with open('syntax/internal/sslots/appos.txt', encoding='utf8') as f:
+            self.appos = {x.strip() for x in f.readlines()}
+        with open('syntax/internal/sslots/compound.txt', encoding='utf8') as f:
+            self.compound = {x.strip() for x in f.readlines()}
+        with open('syntax/internal/sslots/xcomp.txt', encoding='utf8') as f:
+            self.xcomp = {x.strip() for x in f.readlines()}
         
     def convert(self, sent):
         for token in sent['tokens']:
@@ -64,6 +77,7 @@ class DeprelConverter:
                 sent['tokens'][token['id']]['head'] = token['id']
                 sent['tokens'][token['id']]['deprel'] = 'fixed'
                 deps[0]['deps'] = f"{deps[0]['head']}:nmod:such_as"
+                deps[0]['deprel'] = 'nmod'
                 if len(deps) > 1:
                     for d in deps[1:]:
                         d['head'] = deps[0]['id']
@@ -109,15 +123,32 @@ class DeprelConverter:
                         token['head'] = deps[0]['id']
                 continue
 
+            # as to why
+            if token['lemma'] == 'as to' and token['SurfSlot'] == 'Modifier_Adverbial_ForNouns':
+                deps = [t for t in sent['tokens'] if t['head'] == token['id']]
+                if deps:
+                    deps[0]['head'] = token['head']
+                    if head['pos'] in {'Noun', 'Pronoun'}:
+                        deps[0]['deps'] = f"{deps[0]['head']}:acl:as_to"
+                    else:
+                        deps[0]['deps'] = f"{deps[0]['head']}:advcl:as_to"
+                    token['head'] = deps[0]['id']
+                    token['dep'] = 'mark'
+
             # obl - ? 
-            if head['pos'] in {'Verb', 'Adjective', 'Adverb'} and (token['grammemes'].get('ExtendedCaseTransformation') or case in {'Genitive', 'Locative', 'Instrumental', 'Prepositional'}) or head['lemma'] == 'согласно': # lang spec
-                token['deprel'] = 'obl'
-            # if self.lang == 'En' and token['SurfSlot'] in self.obliques: # lang spec
+            # if head['pos'] in {'Verb', 'Adjective', 'Adverb'} and (token['grammemes'].get('ExtendedCaseTransformation') or case in {'Genitive', 'Locative', 'Instrumental', 'Prepositional'}) or head['lemma'] == 'согласно': # lang spec
             #     token['deprel'] = 'obl'
-            if head['pos'] in {'Verb', 'Adjective', 'Adverb'} and token['grammemes'].get('SyntacticCase') == ['SyntIndirect']:
+            # # if self.lang == 'En' and token['SurfSlot'] in self.obliques: # lang spec
+            # #     token['deprel'] = 'obl'
+            # if head['pos'] in {'Verb', 'Adjective', 'Adverb'} and token['grammemes'].get('SyntacticCase') == ['SyntIndirect']:
+            #     token['deprel'] = 'obl'
+            # if token['SurfSlot'] == 'Object_Indirect_As':
+            #     token['deprel'] = 'obl'
+            if token['SurfSlot'] in self.oblnmod and head['pos'] in {'Verb', 'Adjective', 'Adverb'} or head['lemma'] == 'согласно':
                 token['deprel'] = 'obl'
-            if token['SurfSlot'] == 'Object_Indirect_As':
-                token['deprel'] = 'obl'
+
+            if token['SurfSlot'] in self.npmod and head['pos'] in {'Verb', 'Adjective', 'Adverb'}:
+                token['deprel'] = 'obl:npmod'
 
             # obl:agent
             if token['SurfSlot'] == 'Object_Instrumental' and head['grammemes'].get('Voice') and 'Passive' in head['grammemes'].get('Voice'):
@@ -132,14 +163,16 @@ class DeprelConverter:
                 token['deprel'] = 'iobj'
 
             # amod
-            if token['SurfSlot'] in self.amods and head['pos'] == 'Noun':
+            if token['SurfSlot'] in self.amod and head['pos'] == 'Noun':
                 token['deprel'] = 'amod'
 
             # nmod - ??
-            if head['pos'] == 'Noun' and (token['pos'] in {'Noun', 'Pronoun'} or 'Time' in token['SurfSlot']):
-                token['deprel'] = 'nmod'
+            # if head['pos'] == 'Noun' and (token['pos'] in {'Noun', 'Pronoun'} or 'Time' in token['SurfSlot']):
+            #     token['deprel'] = 'nmod'
             if token['SurfSlot'] in {'PossessorPremodGenitiveS', 'PossessorPremod'}:
                 token['deprel'] = 'nmod:poss'
+            if token['SurfSlot'] in self.oblnmod and head['pos'] not in {'Verb', 'Adjective', 'Adverb'}:
+                token['deprel'] = 'obl'
 
             # nummod 
             if token['SurfSlot'].startswith('CardNumeral'):
@@ -150,7 +183,7 @@ class DeprelConverter:
                     token['deprel'] = 'nummod:gov'
                 else:
                     token['deprel'] = 'nummod'
-            if token['SurfSlot'] in {'QuantityForPseudoNumerals', 'Quantity_Adjective_AdjectivePronoun'}:
+            if token['SurfSlot'] in {'QuantityForPseudoNumerals', 'Quantity_Adjective_AdjectivePronoun', 'Specification_NumericCharacteristicComma'}:
                 token['deprel'] = 'nummod'
 
             # ru spec тысяча as token
@@ -195,11 +228,10 @@ class DeprelConverter:
                     token['deprel'] = 'nsubj'
 
             # advmod 
-            if (token['SemClass'] == 'NEGATIVE_PARTICLES' or token['pos'] == 'Adverb' or token['form'].lower() in self.advmods or token['SurfSlot'] == 'И_AdditionLimitation'): 
+            # if (token['SemClass'] == 'NEGATIVE_PARTICLES' or token['pos'] == 'Adverb' or token['SurfSlot'] in self.advmod or token['SurfSlot'] == 'И_AdditionLimitation'): 
+            if token['SurfSlot'] in self.advmod:
                 token['deprel'] = 'advmod'
             if token['lemma'] == 'all' and head['SurfSlot'] == 'Complement_Nominal': # какой-то костыль для all, lang spec
-                token['deprel'] = 'advmod'
-            if token['SurfSlot'] == 'Modifier_HyphenoidNonCore':
                 token['deprel'] = 'advmod'
 
             # parataxis
@@ -217,17 +249,48 @@ class DeprelConverter:
                 token['deprel'] = 'parataxis'
 
             # advcl
-            if token['SurfSlot'] in self.advcl and (token['pos'] not in {'Noun', 'Pronoun'} or token.get('copula')): 
+            if token['SurfSlot'] in self.advcl and head['pos'] not in {'Noun', 'Pronoun'} and (token['pos'] not in {'Noun', 'Pronoun'} or token.get('copula')):
                 token['deprel'] = 'advcl'
 
+            # advcl, ccomp
+            if token['SurfSlot'] in {'Adjunct_Purpose_FiniteForm'}:
+                if token['SemSlot'] == 'Cause_Actant':
+                    token['deprel'] = 'ccomp'
+                else:
+                    token['deprel'] = 'advcl'
+            
+            if token['SurfSlot'] == 'Clause_Participle_With_Movement':
+                if token['SemSlot'] == 'Cause':
+                    token['deprel'] = 'advcl'
+                else:
+                    token['deprel'] = 'xcomp'
+
+            if token['SurfSlot'] == 'Clause_Infinitive_Raising':
+                if token['SemSlot'] == 'Purpose_Goal':
+                    token['deprel'] = 'advcl'
+                else:
+                    token['deprel'] = 'xcomp'
+
+            # ccomp
+            if token['SurfSlot'] == 'Clause_Finite' and head['pos'] not in {'Noun', 'Pronoun'}:
+                    token['deprel'] = 'ccomp'
+        
             # acl
             if head['pos'] in {'Noun', 'Pronoun'} and token['pos'] not in {'Noun', 'Pronoun'}:
-                if token['SemSlot'] == 'ParticipleRelativeClause' or token['SurfSlot'] in self.advcl or token.get('copulasc') and token['copulasc'] == 'ParticipleRelativeClause':
+                if token['SemSlot'] == 'ParticipleRelativeClause' or token['SurfSlot'] in self.acl or token.get('copulasc') and token['copulasc'] in self.acl:
                     token['deprel'] = 'acl'
-                if token['SurfSlot'] in {'RelativeClause', 'RelativeClause_DirectFiniteThat'}:
+                if token['SurfSlot'] in self.aclrel:
                     token['deprel'] = 'acl:relcl'
                 if token['SurfSlot'] == 'Clause_Finite' and token['SemSlot'] == 'Relation_Correlative': # ??
                     token['deprel'] = 'acl:relcl'
+
+            # acl:cleft
+            if token['SurfSlot'] == 'Cleft_Group':
+                token['deprel'] = 'acl:cleft'
+
+            # xcomp
+            if token['SurfSlot'] in self.xcomp:
+                token['dep'] = 'xcomp'
 
             # xcomp, ccomp
             if token['SurfSlot'] in {'Clause_Infinitive_Control', 'Clause_Infinitive_Raising'} or token['SurfSlot'] == 'Object_Direct' and token['pos'] == 'Verb':
@@ -243,10 +306,12 @@ class DeprelConverter:
             # Пока сущ-руты получают xcomp
 
             # vocative?
-            if token['SurfSlot'] == 'Vocative':
+            if token['SurfSlot'] in {'Voc', 'Voc_NoComma'}:
                 token['deprel'] = 'vocative'
 
             # compound 
+            if token['SurfSlot'] in self.compound:
+                token['deprel'] = 'compound'
             if self.lang == 'En':
                 if token['SurfSlot'] == 'Modifier_Nominal' and token['grammemes'].get('Placement') == ['LeftPlacement']:
                     token['deprel'] = 'compound'
@@ -261,6 +326,8 @@ class DeprelConverter:
 
             # appos - в кавычках
             if token['SurfSlot'] == 'InternalNoun':
+                token['deprel'] = 'appos'
+            if token['SurfSlot'] in self.appos:
                 token['deprel'] = 'appos'
 
             if token['grammemes'].get('Classifying_Temporal') == ['MonthName'] and head['SemClass'] == 'DAY_NUMBER': # ?

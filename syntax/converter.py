@@ -41,7 +41,7 @@ class Converter:
                 h['deps'] = f"0:root|{head}:conj"
 
     def copulaswap(self, sent):
-        copulas = [t for t in sent['tokens'] if t['SemClass'] in {'BE', 'NEAREST_FUTURE'}]
+        copulas = [t for t in sent['tokens'] if t['SemClass'] in {'BE', 'NEAREST_FUTURE'}] # check EXTERNAL_NECESSITY
         if not copulas:
             return 
         for cop in copulas:
