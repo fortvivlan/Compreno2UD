@@ -1,5 +1,6 @@
 import json
 from syntax.internal import *
+from syntax.semantics.semantics import Semconverter
 
 
 class Converter:
@@ -10,6 +11,7 @@ class Converter:
         self.punct = Punctuation()
         self.deprels = DeprelConverter(lang)
         self.deps = EnhancedConverter(lang)
+        self.semconv = Semconverter()
         #self.baseud = BaseConverter(lang)
         
     def convert(self):
@@ -25,6 +27,7 @@ class Converter:
                 self.deps.convert(sent)
                 self.punct.punctheads(sent)
                 self.eudclean(sent)
+                self.semconv.convert(sent)
                 print(json.dumps(sent, ensure_ascii=False), file=out)
 
     def twoheads(self, sent):
