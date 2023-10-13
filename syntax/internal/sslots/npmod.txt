@@ -1,0 +1,8 @@
+NoMatter
+Adjunct_Locative_Actant
+DegreeNumerative
+DegreeMultiplicative
+Adjunct_Manner_Reduplication
+FinalQuantification_Self
+Adjunct_Manner_Reduplication
+DegreeIntensitySlot

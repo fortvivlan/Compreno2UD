@@ -1,0 +1,12 @@
+FirstPartOfPreposition
+For_AfterConjunction
+OfQuantitative
+PassivePreposition
+Preposition
+PrePreposition
+PrePrePreposition
+QuantPreposition
+Idiomatic_Preposition
+Adjunct_Phrasal_Actant
+Adjunct_Concession
+Than
