@@ -1,0 +1,9 @@
+Article
+ArticlePreAttribute
+Demonstrative
+FloatingQuantifier_Control
+FloatingQuantifier_Each_Control
+Idiomatic_Precore_C
+IndefiniteInterrogative
+Quantifier
+RelativeGroup

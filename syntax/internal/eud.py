@@ -174,3 +174,5 @@ class EnhancedConverter:
             if token['grammemes'] == '_' or token['deps']:
                 continue 
             token['deps'] = f"{token['head']}:{token['deprel']}"
+            if 'cop' in token['deps'] and token['deprel'] == None: # я заколебалась
+                token['deprel'] = 'cop'

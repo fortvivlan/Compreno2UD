@@ -1,3 +1,4 @@
+AdditionalComponent_BareInfinitive_Than
 AdditionalComponent_Controlled_Verbal
 AdditionalComponent_Gerund
 AdditionalComponent_Infinitive
@@ -26,10 +27,11 @@ Adjunct_Time_ParticipleClause
 Adjunct_Time_ParticipleClause_Subj
 Clause_Adverbial_ParticiplePhrase
 Clause_Adverbial_ParticiplePhrase_Without
-Complement_Attribute_As_Participle
+ComparAsAdjective
 Comparative_Than_Clause
 ComparClause_As
 ComparClause_The_ForVerb
+ConsequenceBareClause
 ConsequenceThatClause
 Dislocation_Right
 Dislocation_Right_WithComma
