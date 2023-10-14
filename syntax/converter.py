@@ -6,13 +6,16 @@ from syntax.semantics.semantics import Semconverter
 class Converter:
     """Main Syntax converter class"""
     def __init__(self, lang, infile, output):
+        self.xcompslots = {'Complement_Clausal', 'Complement_Clausal_Comma', 
+                           'Complement_Clausal_NoControl', 'Complement_DirectSpeech', 
+                           'Complement_Infinitive', 'Complement_SpQuClause',
+                           'Complement_SpQuClause', 'Complement_ThatClause'}
         self.infile = infile 
         self.output = output 
         self.punct = Punctuation()
         self.deprels = DeprelConverter(lang)
         self.deps = EnhancedConverter(lang)
         self.semconv = Semconverter()
-        #self.baseud = BaseConverter(lang)
         
     def convert(self):
         """Main method"""
@@ -60,6 +63,18 @@ class Converter:
                 depcompl[0]['SurfSlot'] = cop['SurfSlot']
                 depcompl[0]['copula'] = True 
                 depcompl[0]['copulasc'] = cop['SemSlot']
+                # the question[nsubj:outer] is where to go[root]
+                if depcompl[0]['SurfSlot'] in self.xcompslots:
+                    nsubj = [t for t in sent['tokens'] if t['head'] == cop['head'] and t['SurfSlot'] == 'Subject']
+                    if nsubj:
+                        nsubj[0]['deprel'] = 'nsubj:outer'
+                # conj with copula
+                if len(depcompl) > 1:
+                    for d in depcompl[1:]:
+                        d['deprel'] = cop['deprel']
+                        d['SurfSlot'] = cop['SurfSlot']
+                        d['copula'] = True 
+                        d['copulasc'] = cop['SemSlot']
 
             else:
                 head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() != 'это'][0] # костыль хаха
@@ -67,7 +82,10 @@ class Converter:
             cop['head'] = head['id']
             for token in sent['tokens']:
                 if token['head'] == cop['id']:
-                    token['head'] = head['id']
+                    if token.get('copula') and token is not head:
+                        token['head'] = head['head']
+                    else:
+                        token['head'] = head['id']
             cop['deprel'] = 'cop'
     
     def eudclean(self, sent):

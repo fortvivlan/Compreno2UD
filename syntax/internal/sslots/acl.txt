@@ -4,6 +4,12 @@ Adjunct_Time_Clause
 Adjunct_Time_ParticipleClause_Subj   
 Clause_Adverbial_ParticiplePhrase    
 Clause_Finite
+Clause_Infinitive_IndQu_NoControl
+Clause_Infinitive_NoControl
+Clause_Infinitive_SpQu_NoControl
+Clause_Subjunctive_IndQu
+Clause_Subjunctive_That
+ComparAsAdjective
 Comparative_Than_Participle
 Complement_Attribute_As_Participle
 Idiomatic_ParticiplePostmodifier
@@ -15,11 +21,8 @@ ParticiplePremodifier
 RelativeClause
 RelativeClause_Clausal
 RelativeClause_DirectFinite
-RelativeClause_DirectFiniteThat      
 RelativeClause_DirectFinite_SubjOblig
+RelativeClause_DirectFiniteThat      
 RelativeClause_DirectInfinitive      
 RelativeClause_DirectInfinitive_Comma
 RelativeClause_ThatClause
-Clause_Infinitive_IndQu_NoControl
-Clause_Infinitive_NoControl
-Clause_Infinitive_SpQu_NoControl
