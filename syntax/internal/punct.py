@@ -28,6 +28,7 @@ class Punctuation:
         self.punctuation(sent, '.,!?:;-', comma=True)
         # merge ' s, ' ve and so on
         self.apocheck(sent)
+        self.emergencyhead(sent)
 
     def punctuation_quotes(self, sent):
         """Quote head setting"""
@@ -325,3 +326,10 @@ class Punctuation:
                 continue
             else:
                 sent['text'] += token['form'] + ' '
+
+    def emergencyhead(self, sent):
+        '''Shouldn't be used normally'''
+        heads = [t for t in sent['tokens'] if t['head'] is None]
+        if heads:
+            for t in heads:
+                t['head'] = self.senthead
