@@ -80,7 +80,7 @@ class Fixes_en:
             if br.match(str(word['deps'])):
                 word['deps'] = re.sub(r'(\.\d+01)', '.1', str(word['deps']))
 
-    def bounded_neg(self, sent, sent1):
+    def bounded_neg(self, sent):
         neg_bounded = re.compile(r'[A-za-z]+n\'t')
         divided_words = []
         c = 0
@@ -118,7 +118,8 @@ class Fixes_en:
                 stop = sent.index(word)
                 sent.remove(word)
                 for old_word in sent[stop:]:
-                    old_word['id'] += len(divided_words) - c
+                    if type(old_word) == int:
+                        old_word['id'] += len(divided_words) - c
                 count = 1
                 c = 0
                 for i in range(len(sent)):
