@@ -66,11 +66,13 @@ class Feats_module_en:
                         if needed_feat['Type'][0] == 'ParticipleOne' and 'PresenceOfAuxiliaryVerb' in needed_feat and needed_feat['PresenceOfAuxiliaryVerb'][0] == 'AuxPlus':
                             needed_feat['VerbForm'] = 'Part'
                             needed_feat['Tense'] == 'Pres'
+
                                 
                         #это для причастий 2 типа
                         elif needed_feat['Type'][0] == 'ParticipleTwo':
                             needed_feat['VerbForm'] = 'Part'
                             needed_feat['Tense'] == 'Past'
+                        
                 
                         #это для герундиев, которые указаны в лоб в финит класс или семслот у них подходящий (иногда они совпадают, но не всегда)
                         elif 'VerbForm' in needed_feat and needed_feat['VerbForm'][0] == 'Gerund':
