@@ -180,7 +180,7 @@ class Converter:
                         self.fix_lemmas_en.bounded_s(data[sent_id]['tokens'])
                     #while bounded_neg > 0:
                     if bounded_neg:
-                        self.fix_lemmas_en.bounded_neg(data[sent_id]['tokens'], data[sent_id]['text'])
+                        self.fix_lemmas_en.bounded_neg(data[sent_id]['tokens'])
                     if null:
                         self.fix_lemmas_en.null_check(data[sent_id]['tokens'])
                         

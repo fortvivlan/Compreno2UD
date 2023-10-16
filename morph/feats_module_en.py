@@ -178,7 +178,11 @@ class Feats_module_en:
                         needed_feat['PronType'] = 'Rcp'#each other's есть в лексемах с пробелами! а PronType=Rcp добавить для each - добавила в .csv
                     
                     if lemma.lower() in self.posspron or lemma.lower() in self.pers_pron:
-                        needed_feat['PronType'] = 'Prs'
+                        try :
+                            needed_feat['PronType'] = 'Prs'
+                        except TypeError:
+                            print('ERROR')
+
                     if lemma.lower() == 'all' or lemma.lower() == 'both':
                         needed_feat['PronType'] = 'Tot'
                         if 'Person' in needed_feat:
@@ -310,7 +314,7 @@ class Feats_module_en:
                         needed_feat['NumType'] = 'Ord'
                         #сразу добавлю степень, а то ее нет в фичах изначально, и она 'Pos' у порядковых числительных
                         needed_feat['Degree'] = 'Pos'
-                    else:
+                    elif 'PartletOfSpeech' in needed_feat:
                         needed_feat.pop('PartletOfSpeech')
 
                 if 'SyntacticParadigm' in needed_feat and needed_feat['SyntacticParadigm'][0] == 'SyntPseudoNumeral' and token.lower() in {'third', 'half'}:
