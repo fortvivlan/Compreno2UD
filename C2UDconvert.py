@@ -18,7 +18,7 @@ class Compreno2UD:
 
     def convert(self):
         self.syntax.convert() 
-        self.morph.convert_wordlines()
+        # self.morph.convert_wordlines()
         # os.remove(self.temp)
 
 if __name__ == '__main__':
@@ -41,6 +41,6 @@ if __name__ == '__main__':
 
     lang = 'En'
     infile = 'data/english_full.json'
-    outfile = 'data/res1.conllu'
+    outfile = 'data/res.conllu'
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
     converter.convert()

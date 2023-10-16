@@ -14,8 +14,7 @@ class DeprelConverter:
 
         if lang == 'En':
             en = pickle.load(open('syntax/internal/en.slots', 'rb'))
-            for key in en:
-                self.__dict__[key] = en[key]
+            self.__dict__.update(en)
 
     def headswap(self, sent, token, depcase):
         # swaps heads for token and its first dependent (probably the only one)
@@ -350,15 +349,6 @@ class DeprelConverter:
 
             ############
 
-            # Complement_Nominal
-            if token['SurfSlot'] == 'Complement_Nominal':
-                depsprep = [t for t in sent['tokens'] if t['head'] == token['id'] and t['pos'] == 'Preposition']
-                if head['form'].lower() == "it's":
-                    if depsprep:
-                        token['deprel'] = 'obl'
-                    else:
-                        token['deprel'] = 'xcomp'
-
             # vocative
             if token['SurfSlot'] in {'Voc', 'Voc_NoComma'}:
                 token['deprel'] = 'vocative'
@@ -591,10 +581,14 @@ class DeprelConverter:
                     token['deprel'] = 'parataxis'
                     continue
                 ### HEAD SWAP ###
-                head['head'] = headdeps[0]['id']
-                headdeps[0]['head'] = 0
-                headdeps[0]['deprel'] = 'root'
-                head['deprel'] = 'parataxis'
+                if not headdeps:
+                    token['deprel'] = 'parataxis'
+                    # print(sent['text'], token['form'])
+                else:
+                    head['head'] = headdeps[0]['id']
+                    headdeps[0]['head'] = 0
+                    headdeps[0]['deprel'] = 'root'
+                    head['deprel'] = 'parataxis'
                 if len(headdeps) > 1:
                     for t in headdeps[1:]:
                         t['deps'] = f"{headdeps[0]['id']}:conj|0:root"
