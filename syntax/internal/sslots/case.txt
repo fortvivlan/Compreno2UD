@@ -1,0 +1,13 @@
+Adjunct_Concession
+Adjunct_Phrasal_Actant
+AsLike
+FirstPartOfPreposition
+For_AfterConjunction
+Idiomatic_Preposition
+OfQuantitative
+PassivePreposition
+Preposition
+PrePreposition
+PrePrePreposition
+QuantPreposition
+Than

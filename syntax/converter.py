@@ -1,16 +1,21 @@
 import json
 from syntax.internal import *
+from syntax.semantics.semantics import Semconverter
 
 
 class Converter:
     """Main Syntax converter class"""
     def __init__(self, lang, infile, output):
+        self.xcompslots = {'Complement_Clausal', 'Complement_Clausal_Comma', 
+                           'Complement_Clausal_NoControl', 'Complement_DirectSpeech', 
+                           'Complement_Infinitive', 'Complement_SpQuClause',
+                           'Complement_SpQuClause', 'Complement_ThatClause'}
         self.infile = infile 
         self.output = output 
         self.punct = Punctuation()
         self.deprels = DeprelConverter(lang)
         self.deps = EnhancedConverter(lang)
-        #self.baseud = BaseConverter(lang)
+        self.semconv = Semconverter()
         
     def convert(self):
         """Main method"""
@@ -25,6 +30,7 @@ class Converter:
                 self.deps.convert(sent)
                 self.punct.punctheads(sent)
                 self.eudclean(sent)
+                self.semconv.convert(sent)
                 print(json.dumps(sent, ensure_ascii=False), file=out)
 
     def twoheads(self, sent):
@@ -41,7 +47,7 @@ class Converter:
                 h['deps'] = f"0:root|{head}:conj"
 
     def copulaswap(self, sent):
-        copulas = [t for t in sent['tokens'] if t['SemClass'] in {'BE', 'NEAREST_FUTURE'}]
+        copulas = [t for t in sent['tokens'] if t['SemClass'] in {'BE', 'NEAREST_FUTURE'}] # check EXTERNAL_NECESSITY
         if not copulas:
             return 
         for cop in copulas:
@@ -57,6 +63,18 @@ class Converter:
                 depcompl[0]['SurfSlot'] = cop['SurfSlot']
                 depcompl[0]['copula'] = True 
                 depcompl[0]['copulasc'] = cop['SemSlot']
+                # the question[nsubj:outer] is where to go[root]
+                if depcompl[0]['SurfSlot'] in self.xcompslots:
+                    nsubj = [t for t in sent['tokens'] if t['head'] == cop['head'] and t['SurfSlot'] == 'Subject']
+                    if nsubj:
+                        nsubj[0]['deprel'] = 'nsubj:outer'
+                # conj with copula
+                if len(depcompl) > 1:
+                    for d in depcompl[1:]:
+                        d['deprel'] = cop['deprel']
+                        d['SurfSlot'] = cop['SurfSlot']
+                        d['copula'] = True 
+                        d['copulasc'] = cop['SemSlot']
 
             else:
                 head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() != 'это'][0] # костыль хаха
@@ -64,7 +82,10 @@ class Converter:
             cop['head'] = head['id']
             for token in sent['tokens']:
                 if token['head'] == cop['id']:
-                    token['head'] = head['id']
+                    if token.get('copula') and token is not head:
+                        token['head'] = head['head']
+                    else:
+                        token['head'] = head['id']
             cop['deprel'] = 'cop'
     
     def eudclean(self, sent):

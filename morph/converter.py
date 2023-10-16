@@ -152,6 +152,7 @@ class Converter:
                     bounded = 0
                     bounded_fgn = 0
                     bounded_neg = 0
+                    null = 0
                     out.write(f"# sent_id = {sent_id + 1}\n")
                     out.write(f"# text = {data[sent_id]['text']}\n")
 
@@ -162,18 +163,27 @@ class Converter:
                     
                         if word['form'].lower() in bounded_token_list:
                             bounded = 1
-                        if self.neg_bounded.fullmatch(word['form']):
-                            bounded_fgn = 1
+                        if self.neg_bounded.search(word['form']):
+                            bounded_neg = 1
                         if self.s_bounded.fullmatch(word['form']):
                             bounded_fgn = 1
                         if self.s1_bounded.fullmatch(word['form']):
                             bounded_fgn = 1
+                        if word['form'] == "#NULL's" or word['form'] == '#NULL':
+
+                            null = 1
+                    
 
                     if bounded:
-                        self.fixes.indexation_bounded_csv(data[sent_id]['tokens'], csv_dict, bounded_token_list)
+                        self.fix_lemmas_en.csv_div(data[sent_id]['tokens'], csv_dict, bounded_token_list)
                     if bounded_fgn:
                         self.fix_lemmas_en.bounded_s(data[sent_id]['tokens'])
-
+                    #while bounded_neg > 0:
+                    if bounded_neg:
+                        self.fix_lemmas_en.bounded_neg(data[sent_id]['tokens'], data[sent_id]['text'])
+                    if null:
+                        self.fix_lemmas_en.null_check(data[sent_id]['tokens'])
+                        
                     self.fix_lemmas_en.new_line1(data[sent_id]['tokens'])
 
                     
@@ -195,6 +205,12 @@ class Converter:
                             else:
                                 
                                 ud_feats = '|'.join(new_feats)
+                        if word['pos'] == 'VERB' or word['pos'] == 'AUX':
+                            if 'Type' in word['grammemes'] and word['grammemes']['Type'][0] == 'ParticipleOne':
+                                for word1 in data[sent_id]['tokens']:
+                                    if word['id'] == word1['head'] and word1['pos'] == 'AUX' and 'TypeOfVerb' in word1['grammemes'] and word1['grammemes']['TypeOfVerb'][0] == 'Be':
+                                        ud_feats = 'Tense=Pres|VerbForm=Part'
+
                         if 'ReferenceClass' in word['grammemes'] and word['grammemes']['ReferenceClass'][0] == 'RCRelative':
                             for word1 in data[sent_id]['tokens']:
                                 if word1['id'] == word['head'] and word1['deprel'] == 'acl:relcl':

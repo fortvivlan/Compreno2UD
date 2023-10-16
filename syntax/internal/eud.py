@@ -10,6 +10,7 @@ class EnhancedConverter:
         self.conjconv(sent)
         self.ellipsisconv(sent)
         self.rest(sent)
+        self.reftag(sent)
             
     def conjconv(self, sent):
         conjs = [t for t in sent['tokens'] if t['grammemes'] != '_' and t['grammemes'].get('TypeOfCoordination')]
@@ -152,9 +153,26 @@ class EnhancedConverter:
                         token['deps'] = f"{token['head']}:{token['deprel']}"
             if token['deprel'] in {'advcl', 'acl'} and 'mark' in deps:
                 token['deps'] = f"{token['head']}:{token['deprel']}:{deps['mark'].replace(' ', '_')}"
+
+    def reftag(self, sent):
+        corefs = [t for t in sent['tokens'] if t.get('IsCoref') and t['pos'] == 'Pronoun']
+        if not corefs:
+            return 
+        for c in corefs:
+            try:
+                corefhead = [t for t in sent['tokens'] if t['id'] == c['IsCoref']][0]
+                corefhead['deps'] += f"|{c['deps']}"
+                c['deps'] = f"{c['IsCoref']}:ref"
+            except IndexError:
+                print(sent['text'])
+                print([(t['form'], t['IsCoref']) for t in sent['tokens'] if t.get('IsCoref')])
+                raise
+
     
     def rest(self, sent):
         for token in sent['tokens']:
             if token['grammemes'] == '_' or token['deps']:
                 continue 
             token['deps'] = f"{token['head']}:{token['deprel']}"
+            if 'cop' in token['deps'] and token['deprel'] == None: # я заколебалась
+                token['deprel'] = 'cop'

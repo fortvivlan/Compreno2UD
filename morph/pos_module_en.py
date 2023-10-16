@@ -15,7 +15,7 @@ class Pos_module_en:
                     'Predicative': 'ADV',
                     'Interjection': 'INTJ',
                     'Article': 'DET',
-                    'Invariable': ''}#словарик для частей речи
+                    'Invariable': 'ADV'}#словарик для частей речи
 
         self.symb_set = {'%', '$', '№', '°', '€','£', '+', '=', '#', '@', '~', '^', '\\','/', '&'}#set для symb
 
@@ -31,7 +31,7 @@ class Pos_module_en:
             pos_tag = 'PROPN'  # надо бы еще леммы title делать
         if pos_tag == 'NOUN' and 'Capitalization' in feats and feats['Capitalization'][0] == 'ProperCapitalization':
             pos_tag = 'PROPN'
-        elif pos_tag == 'VERB' and 'SyntacticParadigm' in feats and feats['SyntacticParadigm'][0] == 'SyntAuxVerb':
+        elif (pos_tag == 'VERB' and 'TypeOfParadigm' in feats and feats['TypeOfParadigm'][0] == 'AuxiliaryVerb') or semclass == 'NEAREST_FUTURE':
             pos_tag = 'AUX'
         elif pos_tag == 'Conjunction':
             if 'Coordinator' in feats:
@@ -56,7 +56,6 @@ class Pos_module_en:
 
         #todo: для некоторых нужно поменять на DET часть речи
 
-
         if lemma == '#Acronym' and pos_tag == 'Invariable':
             pos_tag = 'PROPN'
         #Pron_to_det = {'их', 'его', 'Их', 'Его'}
@@ -64,7 +63,6 @@ class Pos_module_en:
             pos_tag = 'DET'
         elif deprel == 'det' or deprel == 'det:predet':
             pos_tag = 'DET'
-
 
         if token in self.symb_set:
             pos_tag = 'SYM'

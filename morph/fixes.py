@@ -186,7 +186,7 @@ class Fixes:
             c = 0
             if word['form'].lower() in bounded_token_list:
                 for token in csv_dict.items():
-                    if token[0].lower() == word['form'].lower():#- тут добавлю, когда размечу все омонимичные токены #token[0].startswith(word['form'].lower()) and word['pos'] in token[0] 
+                    if token[0].lower() == word['form'].lower():
                         for part in token[1]:
                             if part['head'] != '_':
                                 head = int(part['head'])#upd: исправила
@@ -202,7 +202,7 @@ class Fixes:
                                 new_word = {'id': word['id'] + c, 'form': part['form'], 'lemma': part['lemma'].lower(), 'p0s': '_',
                                             'pos': part['pos'], 'grammemes': part['grammemes'], 'deprel': part['deprel'], 'deps': word['deps'], 'head': head, 'misc': '_',
                                             'SemSlot': '_', 'SemClass': '__'}                                
-
+                            
                             if new_word['head'] != 0:#если не вершина
                                 new_word['head'] = new_word['id'] - new_word['head']
                                 new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}'
