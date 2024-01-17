@@ -85,6 +85,25 @@ class DeprelConverter:
                 self.flatnameswap(sent, token, head)
 
             ############
+            ### LIKE
+            ############
+            if token['lemma'] == 'like' and token['SemSlot'] == 'Ch_Relation_Coincidence':
+                token['deprel'] = 'case'
+                deps = [t for t in sent['tokens'] if t['head'] == token['id']]
+                if deps:
+                    deps[0]['head'] = token['head']
+                    token['head'] = deps[0]['id']
+                    if head['pos'] not in {'Noun', 'Pronoun'}:
+                        deps[0]['deprel'] = 'obl'
+                    else:
+                        deps[0]['deprel'] = 'nmod'
+                    if len(deps) > 1:
+                        for d in deps[1:]:
+                            d['head'] = deps[0]['id']
+                            d['deprel'] = 'conj'
+                            d['deps'] = f"{deps[0]['deprel']}|{deps[0]['id']}:conj"
+                    continue
+            ############
             ### LET'S
             ############
 
