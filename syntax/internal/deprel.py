@@ -112,23 +112,25 @@ class DeprelConverter:
             ### SUCH AS
             ############
 
-            if token['lemma'] == 'such' and sent['tokens'][token['id']]['lemma'] == 'as':
-                token['deprel'] = 'case'
-                deps = [t for t in sent['tokens'] if t['head'] == token['id']]
-                if not deps:
-                    raise Exception # маловероятно
-                deps[0]['head'] = token['head']
-                token['head'] = deps[0]['id']
-                sent['tokens'][token['id']]['head'] = token['id']
-                sent['tokens'][token['id']]['deprel'] = 'fixed'
-                deps[0]['deps'] = f"{deps[0]['head']}:nmod:such_as"
-                deps[0]['deprel'] = 'nmod'
-                if len(deps) > 1:
-                    for d in deps[1:]:
-                        d['head'] = deps[0]['id']
-                        d['deprel'] = 'conj'
-                        d['deps'] = f"{deps[0]['deps']}|{deps[0]['id']}:conj"
-                continue
+            if token['lemma'] == 'such':
+                nexttok = [t for t in sent['tokens'] if t['id'] == token['id'] + 1][0]
+                if nexttok['form'] == 'as':   
+                    token['deprel'] = 'case'
+                    deps = [t for t in sent['tokens'] if t['head'] == token['id']]
+                    if not deps:
+                        raise Exception # маловероятно
+                    deps[0]['head'] = token['head']
+                    token['head'] = deps[0]['id']
+                    nexttok['head'] = token['id']
+                    nexttok['deprel'] = 'fixed'
+                    deps[0]['deps'] = f"{deps[0]['head']}:nmod:such_as"
+                    deps[0]['deprel'] = 'nmod'
+                    if len(deps) > 1:
+                        for d in deps[1:]:
+                            d['head'] = deps[0]['id']
+                            d['deprel'] = 'conj'
+                            d['deps'] = f"{deps[0]['deps']}|{deps[0]['id']}:conj"
+                    continue
 
             ## dep, моржи
             if token['SurfSlot'].startswith('Modifier_Prefixoid') or 'Composite' in token['SurfSlot'] or token['SurfSlot'] == 'Non_Prefixoid':
@@ -423,7 +425,8 @@ class DeprelConverter:
                     token['head'] = part[0]['id']
             if token['SurfSlot'] == 'ProperNamePrefix' and head['grammemes'].get('Usage') and head['grammemes'].get('Usage') == ['AnthroponymComponentUsage']:
                 token['deprel'] = 'flat:name'
-                token['head'] -= 2
+                if token['head'] > 2:
+                    token['head'] -= 2
 
             # flat:foreign
             if head['grammemes'].get('SpecialLexemes') == ['Lex_Foreign']:

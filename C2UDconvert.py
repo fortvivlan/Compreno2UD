@@ -19,7 +19,7 @@ class Compreno2UD:
     def convert(self):
         self.syntax.convert() 
         self.morph.convert_wordlines()
-        os.remove(self.temp)
+        # os.remove(self.temp)
 
 if __name__ == '__main__':
 
