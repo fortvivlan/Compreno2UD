@@ -292,7 +292,8 @@ class Fixes_en:
                     c+=1
                     divided_words.append(new_word)
 
-                    dic = {k: k for k in range(1, len(sent))}
+                    dic = {k: k for k in range(1, len(sent) + 1)}
+                    
                     start = sent.index(word)
                     for i in divided_words:
                         sent.insert(start, i)
@@ -300,36 +301,28 @@ class Fixes_en:
                     stop = sent.index(word)
                     sent.remove(word)
                     for old_word in sent[stop:]:
-                        old_word['id'] += len(divided_words) - 1
+                        old_word['id'] += 1
                     count = 1
+                    dd = re.compile(r'\d+-\d+')
+                    cc = re.compile(r'\d+\.\d')
                     for i in range(len(sent)):
-                        if sent[i]['SemClass'] == '__':
+                        if sent[i]['SemClass'] == '__' or dd.fullmatch(str(sent[i]['id'])) or cc.fullmatch(str(sent[i]['id'])):
                             continue
                         else:
                             dic[count] = sent[i]['id']
                             count += 1
+
                     for i in range(len(sent)):
                         if sent[i]['SemClass'] == '__':
                             sent[i]['SemClass'] = '_'
                             continue
                         else:
                             for item in dic:
-                                # print(item, dic[item], sent[i]['lemma'], sent[i]['head'])
                                 if sent[i]['head'] == item:
                                     sent[i]['head'] = dic[item]
                                     sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
                                     break
-                    
-                        
-            
-
-    def change_head(self, sent):
-        dd = re.compile(r'\d+-\d+')
-        for word in sent:
-            if dd.fullmatch(str(word['head'])):
-                print(f"неправильная голова: {word['lemma']}, голова: {word['head']}")
-                word['head'] = re.sub(r'-\d+', '', word['head'])
-                word['deps'] = re.sub(r'-\d+', '', word['deps'])
+                
 
 
             
@@ -439,18 +432,21 @@ class Fixes_en:
                         for old_word in sent[stop:]:
                             old_word['id'] += len(divided_words) - 1
                         count = 1
+                        cc = re.compile(r'\d+\.\d')
                         for i in range(len(sent)):
                             if sent[i]['SemClass'] == '__':
                                 continue
                             else:
                                 dic[count] = sent[i]['id']
                                 count += 1
+                        
                         for i in range(len(sent)):
                             if sent[i]['SemClass'] == '__':
                                 sent[i]['SemClass'] = '_'
                                 continue
                             else:
                                 for item in dic:
+                                    # print(item, dic[item], sent[i]['lemma'], sent[i]['head'])
                                     if sent[i]['head'] == item:
                                         sent[i]['head'] = dic[item]
                                         sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{dic[item]}:', sent[i]['deps'])
