@@ -434,11 +434,12 @@ class Fixes_en:
                         count = 1
                         cc = re.compile(r'\d+\.\d')
                         for i in range(len(sent)):
-                            if sent[i]['SemClass'] == '__':
+                            if sent[i]['SemClass'] == '__' or cc.fullmatch(str(sent[i]['id'])):
                                 continue
                             else:
                                 dic[count] = sent[i]['id']
                                 count += 1
+                        # print(dic)
                         
                         for i in range(len(sent)):
                             if sent[i]['SemClass'] == '__':
