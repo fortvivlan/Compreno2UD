@@ -274,11 +274,11 @@ class Punctuation:
         fordel = []
         for idx, a in apos:
             try:
-                if sent['tokens'][idx + 1]['form'].lower() == 's' and sent['tokens'][idx + 1]['SemClass'] != 'AUXILIARY_VERBS' and sent['tokens'][idx - 1]['form'] != '#NULL':
+                if sent['tokens'][idx + 1]['form'].lower() == 's' and sent['tokens'][idx + 1]['SemClass'] != 'AUXILIARY_VERBS' and sent['tokens'][idx + 1]['SurfSlot'] != 'Verb' and sent['tokens'][idx - 1]['form'] != '#NULL':
                     sent['tokens'][idx - 1]['form'] = f"{sent['tokens'][idx - 1]['form']}'{sent['tokens'][idx + 1]['form']}"
                     fordel.append(a)
                     fordel.append(sent['tokens'][idx + 1])
-                elif sent['tokens'][idx + 1]['form'].lower() == 's' and sent['tokens'][idx + 1]['SemClass'] != 'AUXILIARY_VERBS' and sent['tokens'][idx - 1]['form'] == '#NULL':
+                elif sent['tokens'][idx + 1]['form'].lower() == 's' and sent['tokens'][idx + 1]['SemClass'] != 'AUXILIARY_VERBS' and sent['tokens'][idx + 1]['SurfSlot'] != 'Verb' and sent['tokens'][idx - 1]['form'] == '#NULL':
                     sent['tokens'][idx + 1]['form'] = f"'{sent['tokens'][idx + 1]['form']}"
                     try:
                         sent['tokens'][idx - 2]['misc'] = 'SpaceAfter=No'
