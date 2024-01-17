@@ -170,7 +170,6 @@ class Converter:
                         if self.s1_bounded.fullmatch(word['form']):
                             bounded_fgn = 1
                         if word['form'] == "#NULL's" or word['form'] == '#NULL':
-
                             null = 1
                     
 
@@ -183,7 +182,7 @@ class Converter:
                         self.fix_lemmas_en.bounded_neg(data[sent_id]['tokens'])
                     if null:
                         self.fix_lemmas_en.null_check(data[sent_id]['tokens'])
-                        
+                    self.fix_lemmas_en.change_head(data[sent_id]['tokens'])
                     self.fix_lemmas_en.new_line1(data[sent_id]['tokens'])
 
                     
