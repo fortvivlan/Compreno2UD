@@ -284,11 +284,11 @@ class Fixes_en:
                     
                     divided_words.append(new_word)
                     new_word = {'id': first_token_id, 'form': parts[0].replace('\'s',''), 'lemma': parts[0].replace('\'s',''), 'pos': word['pos'], 'p0s': word['p0s'], 'grammemes': word['grammemes'],
-                                'head': word['head'] + 1, 'deprel': word['deprel'], 'deps': word['deps'], 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
+                                'head': word['head'], 'deprel': word['deprel'], 'deps': word['deps'], 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
                     c+=1
                     divided_words.append(new_word)
                     new_word = {'id': first_token_id + 1, 'form': '\'s', 'lemma': '\'s', 'pos': 'PART', 'p0s': '_', 'grammemes': '_',
-                                'head': first_token_id, 'deprel': 'case', 'deps': f'{first_token_id}:case', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
+                                'head': f'{first_token_id}', 'deprel': 'case', 'deps': f'{first_token_id}:case', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
                     c+=1
                     divided_words.append(new_word)
 
@@ -314,15 +314,26 @@ class Fixes_en:
                             continue
                         else:
                             for item in dic:
+                                # print(item, dic[item], sent[i]['lemma'], sent[i]['head'])
                                 if sent[i]['head'] == item:
                                     sent[i]['head'] = dic[item]
                                     sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
                                     break
                     
+                        
+            
+
+    def change_head(self, sent):
+        dd = re.compile(r'\d+-\d+')
+        for word in sent:
+            if dd.fullmatch(str(word['head'])):
+                print(f"неправильная голова: {word['lemma']}, голова: {word['head']}")
+                word['head'] = re.sub(r'-\d+', '', word['head'])
+                word['deps'] = re.sub(r'-\d+', '', word['deps'])
 
 
             
-                    '''elif a == 1:
+            '''elif a == 1:
                         for i in range(len(sent)):
                             if sent[i]['SemClass'] == '__':
                                 sent[i]['SemClass'] = '_'
