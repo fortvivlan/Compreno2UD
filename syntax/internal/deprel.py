@@ -101,7 +101,7 @@ class DeprelConverter:
                         for d in deps[1:]:
                             d['head'] = deps[0]['id']
                             d['deprel'] = 'conj'
-                            d['deps'] = f"{deps[0]['deprel']}|{deps[0]['id']}:conj"
+                            d['deps'] = f"{deps[0]['head']}:{deps[0]['deprel']}|{deps[0]['id']}:conj"
                     continue
             ############
             ### LET'S
