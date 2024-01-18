@@ -56,7 +56,7 @@ class EnhancedConverter:
             newhead = None
             deps = [t for t in sent['tokens'] if t['head'] == el['id']]
             deprels = {t['deprel']: t for t in deps}
-            if el['deprel'] not in {'nsubj', 'obj', 'iobj', 'obl', 'nmod', 'nummod'}:
+            if el['deprel'] not in {'nsubj', 'obj', 'iobj', 'obl', 'nmod', 'nummod', 'nmod:poss'}:
                 if self.lang != 'Ru':
                     for d in ('aux', 'cop', 'mark'):
                         if d in deprels:
@@ -64,7 +64,7 @@ class EnhancedConverter:
                             break 
                 elif self.lang == 'Ru':
                     if el['deprel'] == 'root' and 'cop' in deprels:
-                        for d in ('amod', 'nummod', 'det', 'nmod', 'case'):
+                        for d in ('amod', 'nummod', 'det', 'nmod', 'case', 'nmod:poss'):
                             if d in deprels:
                                 newhead = [t for t in deps if t['deprel'] == d][0]
                                 break 
@@ -102,7 +102,7 @@ class EnhancedConverter:
                             dep['head'] = newhead['id']
                             
             else:
-                for d in ('amod', 'nummod', 'det', 'nmod', 'case'):
+                for d in ('amod', 'nummod', 'det', 'nmod', 'nmod:poss', 'case'):
                     if d in deprels:
                         newhead = [t for t in deps if t['deprel'] == d][0]
                         break 
