@@ -160,13 +160,14 @@ class Converter:
                         word['p0s'] = word['pos']#это чтобы сохранить старые посы
                         word['pos'] = self.pos_module_en.convert_pos_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['deprel'], word['SemClass'])
                         word['lemma'] = self.fix_lemmas_en.fix_lemmas_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'])
-                    
+                        
+                        word['id'] = round(word['id'], 1)
                         if word['form'].lower() in bounded_token_list:
                             bounded = 1
                         if self.neg_bounded.search(word['form']):
                             bounded_neg = 1
                         if self.s_bounded.fullmatch(word['form']):
-                            bounded_fgn = 1
+                            bounded_fgn += 1
                         if self.s1_bounded.fullmatch(word['form']):
                             bounded_fgn = 1
                         if word['form'] == "#NULL's" or word['form'] == '#NULL':
@@ -176,7 +177,7 @@ class Converter:
                     if bounded:
                         self.fix_lemmas_en.csv_div(data[sent_id]['tokens'], csv_dict, bounded_token_list)
                     if bounded_fgn:
-                        self.fix_lemmas_en.bounded_s(data[sent_id]['tokens'])
+                        self.fix_lemmas_en.bounded_s(data[sent_id]['tokens'], bounded_fgn)
                     #while bounded_neg > 0:
                     if bounded_neg:
                         self.fix_lemmas_en.bounded_neg(data[sent_id]['tokens'])
@@ -220,6 +221,12 @@ class Converter:
                             word['misc'] = '_'
                         else:
                             word['misc'] = word['misc']
+
+                        tt = re.compile(r'\d+\.\d\d+')
+                        if tt.match(str(word['deps'])):
+                            s = re.compile(r'\d+\.\d\d+').match(word["deps"]).group(0)
+                            word['deps'] = re.sub(r'\d+\.\d\d+', f'{round(float(s), 1)}', word['deps'])
+                        
                         
                         out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\t{word['deps']}\t{word['misc']}\t{word['SemSlot']}\t{word['SemClass']}\n")
                         word_counter -= 1
