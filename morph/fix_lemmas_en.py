@@ -375,9 +375,9 @@ class Fixes_en:
         counter = 0
         a = len(sent) - 1
         while counter < a: 
-            print(sent[counter]['form'])    
+                
             if sent[counter]['form'] == '\'ll' or sent[counter]['form'] == '\'re' or sent[counter]['form'] == '\'ve' or sent[counter]['form'] == '\'d' or sent[counter]['form'] == '\'s' or sent[counter]['form'] == '\'m' and sent[counter]['pos'] == 'AUX': 
-                print('FFFFFFFFFFFFFFFFFFFF')
+                
                 # print(sent[counter]['form'])
                 new_token = {'id': f'{sent[counter-1]["id"]}-{sent[counter]["id"]}',
                             'form': sent[counter-1]["form"] + sent[counter]['form'],
