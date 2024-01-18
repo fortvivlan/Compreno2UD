@@ -12,7 +12,7 @@ class Punctuation:
     def punctheads(self, sent):
         """Main method"""
         try:
-            self.senthead = [token['id'] for token in sent['tokens'] if token['head'] == 0][0] # если 0 вершин, вывалится
+            self.senthead = [token['id'] for token in sent['tokens'] if token['head'] == 0 and token['form'] != '#NULL'][0] # если 0 вершин, вывалится
         except IndexError:
             for token in sent['tokens']:
                 print(token['id'], token['form'], token['head'], sep='\t')
