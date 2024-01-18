@@ -222,10 +222,10 @@ class Converter:
                         else:
                             word['misc'] = word['misc']
 
-                        tt = re.compile(r'\d+\.\d\d+')
-                        if tt.match(str(word['deps'])):
-                            s = re.compile(r'\d+\.\d\d+').match(word["deps"]).group(0)
-                            word['deps'] = re.sub(r'\d+\.\d\d+', f'{round(float(s), 1)}', word['deps'])
+                        # tt = re.compile(r'\d+\.\d\d+')
+                        # if tt.match(str(word['deps'])):
+                        #     s = re.compile(r'\d+\.\d\d+').match(word["deps"]).group(0)
+                        #     word['deps'] = re.sub(r'\d+\.\d\d+', f'{round(float(s), 1)}', word['deps'])
                         
                         
                         out.write(f"{word['id']}\t{word['form']}\t{word['lemma']}\t{word['pos']}\t{word['p0s']}\t{ud_feats}\t{word['head']}\t{word['deprel']}\t{word['deps']}\t{word['misc']}\t{word['SemSlot']}\t{word['SemClass']}\n")
