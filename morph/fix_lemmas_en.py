@@ -342,12 +342,9 @@ class Fixes_en:
                             s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))').match(sent[i]["deps"]).group(0)
                             sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
                             # print(f'DEPS:  {sent[i]["lemma"]}')
-                            print(bounded_fgn, sent[i]["lemma"])
-                        elif cc.match(str(sent[i]['deps'])) and bounded_fgn != 1: 
-                            print(bounded_fgn, sent[i]["lemma"])  
+                            # print(bounded_fgn, sent[i]["lemma"]) 
                         else:
                             for item in dic:
-                                # print(item, dic[item], sent[i]['head'], sent[i]['lemma'])
                                 if sent[i]['head'] == item:
                                     sent[i]['head'] = dic[item]
                                     sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
@@ -377,8 +374,11 @@ class Fixes_en:
         """
         counter = 0
         a = len(sent) - 1
-        while counter < a:     
-            if sent[counter]['form'] == '\'ll' or sent[counter]['form'] == '\'re' or sent[counter]['form'] == '\'ve' or sent[counter]['form'] == '\'d' or sent[counter]['form'] == '\'s' and sent[counter]['pos'] == 'AUX' or sent[counter]['form'] == '\'m': 
+        while counter < a: 
+                
+            if sent[counter]['form'] == '\'ll' or sent[counter]['form'] == '\'re' or sent[counter]['form'] == '\'ve' or sent[counter]['form'] == '\'d' or sent[counter]['form'] == '\'s' or sent[counter]['form'] == '\'m' and sent[counter]['pos'] == 'AUX': 
+                
+                # print(sent[counter]['form'])
                 new_token = {'id': f'{sent[counter-1]["id"]}-{sent[counter]["id"]}',
                             'form': sent[counter-1]["form"] + sent[counter]['form'],
                             'lemma': '_',
