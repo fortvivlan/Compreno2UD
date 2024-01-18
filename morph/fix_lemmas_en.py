@@ -169,7 +169,7 @@ class Fixes_en:
 
                     
 
-    def bounded_s(self, sent):
+    def bounded_s(self, sent, bounded_fgn):
         """
         разбивает токены, заканчивающиеся на 's и s'
         """
@@ -179,6 +179,7 @@ class Fixes_en:
         number1_bounded = re.compile(r'let\'s')
         divided_words = []
         c = 0
+        number_of_s = 0
         for word in sent:
             divided_words = []
             c = 0
@@ -251,25 +252,41 @@ class Fixes_en:
                     stop = sent.index(word)
                     sent.remove(word)
                     for old_word in sent[stop:]:
-                        old_word['id'] += len(divided_words) - 2
+                        old_word['id'] += 1
                     count = 1
+                    dd = re.compile(r'\d+-\d+')
+                    cc = re.compile(r'\d+\.\d+')
                     for i in range(len(sent)):
-                        if sent[i]['SemClass'] == '__':
+                        if sent[i]['SemClass'] == '__' or dd.fullmatch(str(sent[i]['id'])) or cc.fullmatch(str(sent[i]['id'])):
                             continue
                         else:
                             dic[count] = sent[i]['id']
                             count += 1
+                            # print(dic)
+                        
                     for i in range(len(sent)):
                         if sent[i]['SemClass'] == '__':
                             sent[i]['SemClass'] = '_'
                             continue
+                        if cc.fullmatch(str(sent[i]['head'])):
+                            sent[i]['head'] += 1
+                            # sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
+                            # print(f'HEAD AND DEPS:  {sent[i]["lemma"], sent[i]["id"]}')
+                        if cc.match(str(sent[i]['deps'])) and bounded_fgn == 1:
+                            s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))').match(sent[i]["deps"]).group(0)
+                            sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
+                            # print(f'DEPS:  {sent[i]["lemma"]}')
+                            print(bounded_fgn, sent[i]["lemma"])
+                        elif cc.match(str(sent[i]['deps'])) and bounded_fgn != 1: 
+                            print(bounded_fgn, sent[i]["lemma"])  
                         else:
                             for item in dic:
+                                # print(item, dic[item], sent[i]['head'], sent[i]['lemma'])
                                 if sent[i]['head'] == item:
                                     sent[i]['head'] = dic[item]
                                     sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
                                     break
-                    break
+                    bounded_fgn-=1
             
 
 
@@ -304,24 +321,38 @@ class Fixes_en:
                         old_word['id'] += 1
                     count = 1
                     dd = re.compile(r'\d+-\d+')
-                    cc = re.compile(r'\d+\.\d')
+                    cc = re.compile(r'\d+\.\d+')
                     for i in range(len(sent)):
                         if sent[i]['SemClass'] == '__' or dd.fullmatch(str(sent[i]['id'])) or cc.fullmatch(str(sent[i]['id'])):
                             continue
                         else:
                             dic[count] = sent[i]['id']
                             count += 1
-
+                            # print(dic)
+                        
                     for i in range(len(sent)):
                         if sent[i]['SemClass'] == '__':
                             sent[i]['SemClass'] = '_'
                             continue
+                        if cc.fullmatch(str(sent[i]['head'])):
+                            sent[i]['head'] += 1
+                            # sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
+                            # print(f'HEAD AND DEPS:  {sent[i]["lemma"], sent[i]["id"]}')
+                        if cc.match(str(sent[i]['deps'])) and bounded_fgn == 1:
+                            s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))').match(sent[i]["deps"]).group(0)
+                            sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
+                            # print(f'DEPS:  {sent[i]["lemma"]}')
+                            print(bounded_fgn, sent[i]["lemma"])
+                        elif cc.match(str(sent[i]['deps'])) and bounded_fgn != 1: 
+                            print(bounded_fgn, sent[i]["lemma"])  
                         else:
                             for item in dic:
+                                # print(item, dic[item], sent[i]['head'], sent[i]['lemma'])
                                 if sent[i]['head'] == item:
                                     sent[i]['head'] = dic[item]
                                     sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
                                     break
+                    bounded_fgn-=1
                 
 
 
