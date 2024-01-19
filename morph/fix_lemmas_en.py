@@ -5,6 +5,7 @@ import re
 
 #что за  эти #where и #which для #NULL, надо или их менять/убирать, в корпусах вообще нет таких токенов? 
 class Fixes_en:
+
     def __init__(self):
         self.hash_lemma_set = {'#Acronym',
                                 '#ElliptedNoun',
@@ -124,6 +125,7 @@ class Fixes_en:
                         old_word['id'] += len(divided_words) - c
                     except TypeError:
                         old_word['id'] = len(divided_words) - c + int(re.search(first_ind, old_word['id']).group(1))
+                        
                 count = 1
                 c = 0
                 for i in range(len(sent)):
@@ -177,56 +179,13 @@ class Fixes_en:
         number_bounded = re.compile(r'[A-za-z]+\'s')
         number0_bounded = re.compile(r'[A-za-z]+s\'')
         number1_bounded = re.compile(r'let\'s')
+        first_ind = re.compile(r'(\d+)-(\d+)')
         divided_words = []
         c = 0
         number_of_s = 0
         for word in sent:
             divided_words = []
             c = 0
-            if number1_bounded.fullmatch(word['form'].lower()):
-                    parts = re.compile(r'let\'s').findall(word['form'])
-                    first_token_id = word['id'] + c
-                    new_word = {'id': f'{first_token_id}-{first_token_id+1}', 'form':  'let\'s', 'lemma': '_', 'pos': '_', 'p0s': '_', 'grammemes': '_',
-                                'head': '_', 'deprel': '_', 'deps': '_', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
-                    c+=1
-                    divided_words.append(new_word)
-                    new_word = {'id': first_token_id, 'form': word['form'].replace('\'s',''), 'lemma': 'let', 'pos': 'VERB', 'p0s': word['p0s'], 'grammemes': '_',
-                                'head': word['head'], 'deprel': word['deprel'], 'deps': word['deps'], 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
-                    c+=1
-                    divided_words.append(new_word)
-                    new_word = {'id': word['id'] + 1, 'form': '\'s', 'lemma': 'we', 'pos': 'PRON', 'p0s': '_', 'grammemes': 'Case=Acc|Number=Plur|Person=1|PronType=Prs',
-                                'head': first_token_id, 'deprel': 'obj', 'deps': f'{first_token_id}:obj', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
-                    c+=1
-                    divided_words.append(new_word)
-
-                    dic = {k: k for k in range(1, len(sent))}
-                    start = sent.index(word)
-                    for i in divided_words:
-                        sent.insert(start, i)
-                        start += 1
-                    stop = sent.index(word)
-                    sent.remove(word)
-                    for old_word in sent[stop:]:
-                        old_word['id'] += len(divided_words) - 2
-                    count = 1
-                    for i in range(len(sent)):
-                        if sent[i]['SemClass'] == '__':
-                            continue
-                        else:
-                            dic[count] = sent[i]['id']
-                            count += 1
-                    for i in range(len(sent)):
-                        if sent[i]['SemClass'] == '__':
-                            sent[i]['SemClass'] = '_'
-                            continue
-                        else:
-                            for item in dic:
-                                if sent[i]['head'] == item:
-                                    sent[i]['head'] = dic[item]
-                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
-                                    break
-                    break
-            
             
             if number0_bounded.fullmatch(word['form']):
                     parts = number0_bounded.findall(word['form'])
@@ -252,6 +211,69 @@ class Fixes_en:
                     stop = sent.index(word)
                     sent.remove(word)
                     for old_word in sent[stop:]:
+                        try:
+                            old_word['id'] = int(old_word['id']) + 1
+                        except ValueError:
+                            old_word['id'] = f'{int(re.search(first_ind, old_word["id"]).group(1)) + 1}-{int(re.search(first_ind, old_word["id"]).group(2)) + 1}'
+
+                    count = 1
+                    dd = re.compile(r'\d+-\d+')
+                    cc = re.compile(r'\d+\.\d+')
+                    for i in range(len(sent)):
+                        if sent[i]['SemClass'] == '__' or dd.fullmatch(str(sent[i]['id'])) or cc.fullmatch(str(sent[i]['id'])):
+                            continue
+                        else:
+                            dic[count] = sent[i]['id']
+                            count += 1
+                        
+                    for i in range(len(sent)):
+                        if sent[i]['SemClass'] == '__':
+                            sent[i]['SemClass'] = '_'
+                            continue
+                        if cc.fullmatch(str(sent[i]['head'])):
+                            sent[i]['head'] += 1
+
+                        if cc.match(str(sent[i]['deps'])) and bounded_fgn == 1:
+                            s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))').match(sent[i]["deps"]).group(0)
+                            sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
+                            print(bounded_fgn, sent[i]["lemma"])
+
+                        elif cc.match(str(sent[i]['deps'])) and bounded_fgn != 1: 
+                            print(bounded_fgn, sent[i]["lemma"])  
+
+                        else:
+                            for item in dic:
+                                if sent[i]['head'] == item:
+                                    sent[i]['head'] = dic[item]
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
+                                    break
+                    bounded_fgn-=1
+            
+
+            if number1_bounded.fullmatch(word['form'].lower()):
+                    parts = re.compile(r'let\'s').findall(word['form'])
+                    first_token_id = word['id'] + c
+                    new_word = {'id': f'{first_token_id}-{first_token_id+1}', 'form':  'let\'s', 'lemma': '_', 'pos': '_', 'p0s': '_', 'grammemes': '_',
+                                'head': '_', 'deprel': '_', 'deps': '_', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
+                    c+=1
+                    divided_words.append(new_word)
+                    new_word = {'id': first_token_id, 'form': word['form'].replace('\'s',''), 'lemma': 'let', 'pos': 'VERB', 'p0s': word['p0s'], 'grammemes': '_',
+                                'head': word['head'], 'deprel': word['deprel'], 'deps': word['deps'], 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
+                    c+=1
+                    divided_words.append(new_word)
+                    new_word = {'id': word['id'] + 1, 'form': '\'s', 'lemma': 'we', 'pos': 'PRON', 'p0s': '_', 'grammemes': 'Case=Acc|Number=Plur|Person=1|PronType=Prs',
+                                'head': first_token_id, 'deprel': 'obj', 'deps': f'{first_token_id}:obj', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
+                    c+=1
+                    divided_words.append(new_word)
+
+                    dic = {k: k for k in range(1, len(sent))}
+                    start = sent.index(word)
+                    for i in divided_words:
+                        sent.insert(start, i)
+                        start += 1
+                    stop = sent.index(word)
+                    sent.remove(word)
+                    for old_word in sent[stop:]:
                         old_word['id'] += 1
                     count = 1
                     dd = re.compile(r'\d+-\d+')
@@ -262,7 +284,6 @@ class Fixes_en:
                         else:
                             dic[count] = sent[i]['id']
                             count += 1
-                            # print(dic)
                         
                     for i in range(len(sent)):
                         if sent[i]['SemClass'] == '__':
@@ -270,30 +291,26 @@ class Fixes_en:
                             continue
                         if cc.fullmatch(str(sent[i]['head'])):
                             sent[i]['head'] += 1
-                            # sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
-                            # print(f'HEAD AND DEPS:  {sent[i]["lemma"], sent[i]["id"]}')
+
                         if cc.match(str(sent[i]['deps'])) and bounded_fgn == 1:
                             s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))').match(sent[i]["deps"]).group(0)
                             sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
-                            # print(f'DEPS:  {sent[i]["lemma"]}')
                             print(bounded_fgn, sent[i]["lemma"])
+
                         elif cc.match(str(sent[i]['deps'])) and bounded_fgn != 1: 
                             print(bounded_fgn, sent[i]["lemma"])  
+
                         else:
                             for item in dic:
-                                # print(item, dic[item], sent[i]['head'], sent[i]['lemma'])
                                 if sent[i]['head'] == item:
                                     sent[i]['head'] = dic[item]
                                     sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
                                     break
                     bounded_fgn-=1
-            
 
 
 
-
-
-            if number_bounded.fullmatch(word['form']):
+            elif number_bounded.fullmatch(word['form']):
                     parts = re.compile(r'[A-za-z]+\'s').findall(word['form'])
                     first_token_id = word['id']
                     new_word = {'id': f'{first_token_id}-{first_token_id+1}', 'form': parts[0], 'lemma': '_', 'pos': '_', 'p0s': '_', 'grammemes': '_',
@@ -318,7 +335,10 @@ class Fixes_en:
                     stop = sent.index(word)
                     sent.remove(word)
                     for old_word in sent[stop:]:
-                        old_word['id'] += 1
+                        try:
+                            old_word['id'] = int(old_word['id']) + 1
+                        except ValueError:
+                            old_word['id'] = f'{int(re.search(first_ind, old_word["id"]).group(1)) + 1}-{int(re.search(first_ind, old_word["id"]).group(2)) + 1}'
                     count = 1
                     dd = re.compile(r'\d+-\d+')
                     cc = re.compile(r'\d+\.\d+')
@@ -350,24 +370,7 @@ class Fixes_en:
                                     sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
                                     break
                     bounded_fgn-=1
-                
-
-
-            
-            '''elif a == 1:
-                        for i in range(len(sent)):
-                            if sent[i]['SemClass'] == '__':
-                                sent[i]['SemClass'] = '_'
-                                continue
-                            else:
-                                for item in dic:
-                                    if sent[i]['head'] == item:
-                                        sent[i]['head'] = dic[item]
-                                        sent[i]['deps'] = re.sub(r'.+\:', f'{sent[i]["head"]}:', sent[i]['deps'])
-                                        break
-                        break     '''              
-
-                    
+                          
     def new_line1(self, sent):
         """
         добавляет строчку уже разбитым токенам
@@ -376,8 +379,7 @@ class Fixes_en:
         a = len(sent) - 1
         while counter < a: 
                 
-            if sent[counter]['form'] == '\'ll' or sent[counter]['form'] == '\'re' or sent[counter]['form'] == '\'ve' or sent[counter]['form'] == '\'d' or sent[counter]['form'] == '\'s' or sent[counter]['form'] == '\'m' and sent[counter]['pos'] == 'AUX': 
-                
+            if sent[counter]['form'] in {'\'ll', '\'re', '\'ve', '\'d', '\'s', '\'m'} and sent[counter]['pos'] in {'VERB', 'AUX'}:                
                 # print(sent[counter]['form'])
                 new_token = {'id': f'{sent[counter-1]["id"]}-{sent[counter]["id"]}',
                             'form': sent[counter-1]["form"] + sent[counter]['form'],
@@ -396,6 +398,8 @@ class Fixes_en:
                 a -= 1 
             else:
                 counter += 1
+
+
     def csv_div(self, sent, csv_dict, bounded_token_list):
         """
         Разделяет токены, которые есть в доке csv, состоящие из нескольких токенов.
