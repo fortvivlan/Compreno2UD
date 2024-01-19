@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     mwe = 'morph/lwsplease.csv'
     temp = 'data/temp.json'
-
+ 
     ## to run in command line:
     ##########################
 
@@ -41,6 +41,6 @@ if __name__ == '__main__':
 
     lang = 'En'
     infile = 'data/english_full.json'
-    outfile = 'data/train.conllu'
+    outfile = 'data/res.conllu'
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
     converter.convert()
