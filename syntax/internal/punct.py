@@ -23,11 +23,11 @@ class Punctuation:
         # set heads to brackets
         self.punctuation_brackets(sent)
         # set heads to commas
+        self.apocheck(sent)
+        # merge ' s, ' ve and so on
         self.punctuation(sent, ',')
         # set heads to the rest
         self.punctuation(sent, '.,!?:;-', comma=True)
-        # merge ' s, ' ve and so on
-        self.apocheck(sent)
         self.emergencyhead(sent)
 
     def punctuation_quotes(self, sent):
@@ -142,7 +142,7 @@ class Punctuation:
         # cases where dash - use SurfSlots
         punct = [token for token in sent['tokens'] if token['lemma'] in punc]
 
-        ## logs ##
+        # # logs ##
         # print()
         # if comma:
         #     print('AFTER COMMA')
@@ -154,7 +154,7 @@ class Punctuation:
         # print('Sent head:', self.senthead)
         # for p in punct:
         #     print(f"MARK: `{p['lemma']}` ID: {p['id']}")
-        ##########
+        # #########
 
         prev = 0 # left border
         for i in range(len(punct)):
@@ -170,20 +170,20 @@ class Punctuation:
             else:
                 nextpunc = sent['tokens'][-1]['id'] # если знак препинания только один? 
 
-            ## logs ##
+            # # logs ##
             # print()
             # print(f"Mark: {punct[i]['id']} `{punct[i]['lemma']}` PREV: {prev} NEXT: {nextpunc}")
-            ##########
+            # #########
 
             const_left = [token for token in self.tokens if prev < token['id'] < punct[i]['id']]
             const_right = [token for token in self.tokens if punct[i]['id'] < token['id'] < nextpunc]
 
-            ## logs ##
+            # # logs ##
             # print('Left:', *[token['form'] for token in const_left])
             # print('Right:', *[token['form'] for token in const_right])
-            ##########
+            # #########
 
-            heads = [token['head'] for token in const_left if token['head']] # heads in left part
+            heads = [token['head'] for token in const_left if token['head'] is not None] # heads in left part
             # headsentInL = const_left[0]['id'] < self.senthead < const_left[-1]['id']
             if const_left and heads:
                 max_left = max(heads)
@@ -194,7 +194,7 @@ class Punctuation:
             if not const_right: # нет правого контекста
                 punct[i]['head'] = [token['id'] for token in self.tokens if token['head'] == min_left][0] # check!
                 continue
-            heads = [token['head'] for token in const_right if token['head']] # heads in right part
+            heads = [token['head'] for token in const_right if token['head'] is not None] # heads in right part
             if heads:
                 max_right = max(heads)
                 min_right = min(heads)
@@ -202,9 +202,9 @@ class Punctuation:
                 max_right = 0 
                 min_right = 0
 
-            ## logs ##
+            # # logs ##
             # print(f"LEFT:\nmin: {min_left} max: {max_left}\nRIGHT:\nmin: {min_right} max: {max_right}")
-            ##########
+            # #########
 
             if min_left and min_right: # если они не равны нулю
                 if prev < min_right < punct[i]['id']:
@@ -333,6 +333,7 @@ class Punctuation:
                 continue
             else:
                 sent['text'] += token['form'] + ' '
+        self.senthead = [token['id'] for token in sent['tokens'] if token['head'] == 0 and token['form'] != '#NULL'][0]
 
     def emergencyhead(self, sent):
         '''Shouldn't be used normally'''

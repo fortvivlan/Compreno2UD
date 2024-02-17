@@ -25,6 +25,7 @@ Situative_Introductory_Standpoint
 Specification_Adverb
 Specification_Bracket_SubjectControl
 Specification_ForQuestion
+Specification_NumericCharacteristicDash
 Specification_Participle
 SpecificationClause_Brackets
 SpecificationClause_Colon
