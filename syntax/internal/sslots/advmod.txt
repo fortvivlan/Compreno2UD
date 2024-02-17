@@ -30,6 +30,7 @@ Modifier_Adverbial_ForAdjAdv
 Modifier_Adverbial_ForNouns
 Modifier_Adverbial_ForNumerals
 Modifier_Adverbial_MannerConfiguration
+Modifier_Attributive_Post
 Modifier_HyphenoidNonCore
 Most
 Neg

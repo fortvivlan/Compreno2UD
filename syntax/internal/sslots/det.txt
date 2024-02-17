@@ -7,3 +7,4 @@ Idiomatic_Precore_C
 IndefiniteInterrogative
 Quantifier
 RelativeGroup
+TheCompar

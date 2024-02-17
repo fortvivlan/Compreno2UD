@@ -59,8 +59,23 @@ class EnhancedConverter:
             # собираем зависимости эллипсиса
             deps = [t for t in sent['tokens'] if t['head'] == el['id']]
             deprels = {t['deprel']: t for t in deps}
+            if el['deprel'] in {'xcomp', 'ccomp'}:
+                for d in deps:
+                    d['head'] = el['head']
+                continue
+            # the sooner the better
+            depbetter = [t for t in deps if t['SurfSlot'] == 'ComparisonTargetInitial']
+            if depbetter:
+                newhead = depbetter[0]
+                for dep in deps:
+                    dep['deps'] = f"{el['id']}:xcomp"
+                    if dep is newhead:
+                        dep['deprel'] = el['deprel']
+                        dep['head'] = el['head']
+                    else:
+                        dep['head'] = newhead['id']
 
-            if el['deprel'] not in {'nsubj', 'obj', 'iobj', 'obl', 'nmod', 'nummod', 'nmod:poss'} and el['pos'] not in {'Noun', 'Pronoun'}:
+            elif el['deprel'] not in {'nsubj', 'obj', 'iobj', 'obl', 'nmod', 'nummod', 'nmod:poss'} and el['pos'] not in {'Noun', 'Pronoun'}:
                 if self.lang != 'Ru':
                     # If the main predicate is elided, we use simple promotion only if there is an aux or cop, or a mark in the case of an infinitival marker.
                     if 'parataxis' in deprels and deprels['parataxis']['lemma'] in {'yes', 'no'}:
@@ -122,20 +137,44 @@ class EnhancedConverter:
                     if dep['deps'] and 'conj' in dep['deps']:
                         dep['deps'] = f"0:root|{el['id']}:{dep['deprel']}" # root|conj
                     else:
-                        dep['deps'] = f"{el['id']}:{dep['deprel']}"
+                        if not dep.get('ellmoved'):
+                            dep['deps'] = f"{el['id']}:{dep['deprel']}"
                     if newhead is None:
                         dep['deprel'] = 'orphan'
                         dep['head'] = el['head']
                     else: 
                         if dep is newhead:
-                            dep['deprel'] = el['deprel']
-                            dep['head'] = el['head']
+                            if dep['SurfSlot'] == 'Ellipted_Left' and el['deprel'] == 'conj':
+                                if head['deprel'] == 'ccomp':
+                                    dep['deps'] = f"{dep['head']}:nsubj"
+                                    dep['head'] = el['head']
+                                    dep['deprel'] = 'conj'
+                                    dep['deps'] = f"{dep['head']}:conj|" + dep['deps']
+                                else:
+                                    headdeps = {t['deprel']: t for t in sent['tokens'] if t['head'] == head['id'] and isinstance(t['id'], int)}
+                                    for d in {'obj', 'nsubj', 'nsubj:pass'}:
+                                        if d in headdeps: # очень сомнительно
+                                            dep['deps'] = f"{headdeps[d]['id']}:conj|{dep['head']}:nsubj"
+                                            dep['deprel'] = 'conj'
+                                            dep['head'] = headdeps[d]['id']
+                                            break
+                            else:
+                                dep['deprel'] = el['deprel']
+                                dep['head'] = el['head']
                         else:
-                            dep['head'] = newhead['id']
+                            if not dep.get('ellmoved'):
+                                dep['head'] = newhead['id']
                             
             else:
                 # If the head nominal is elided, we promote dependents in the following order: amod > nummod > det > nmod > case.
-                for d in ('amod', 'nummod', 'det', 'nmod', 'nmod:poss', 'case'):
+                if el['deprel'] == 'conj':
+                    if isinstance(el['head'], float):
+                        headhead = [t for t in sent['tokens'] if t['id'] == head['id']]
+                        if headhead:
+                            newhead = headhead[0]
+                    else:
+                        newhead = head
+                for d in ('amod', 'nummod', 'det', 'nmod', 'nmod:poss', 'case', 'conj'):
                     if d in deprels:
                         newhead = [t for t in deps if t['deprel'] == d][0]
                         break 
@@ -145,8 +184,14 @@ class EnhancedConverter:
                         if dep is newhead:
                             dep['deprel'] = el['deprel']
                             dep['head'] = el['head']
+
                         else:
                             dep['head'] = newhead['id']
+                            if el['deprel'] == 'conj' and dep['deprel'] == 'acl':
+                                dep['deprel'] = 'conj' # костыль только для acl
+                                dep['deps'] = f"{dep['head']}:conj|" + dep['deps']
+                        if isinstance(dep['head'], int):
+                            dep['ellmoved'] = True
 
     def caseconv(self, sent):
         for token in sent['tokens']:
