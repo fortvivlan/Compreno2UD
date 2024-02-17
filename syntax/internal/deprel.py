@@ -39,6 +39,7 @@ class DeprelConverter:
             deps = [t for t in sent['tokens'] if t['head'] == head['id']]
             deps.append(head)
             allhead['head'] = head['head']
+            allhead['deprel'] = head['deprel']
         propdeps = []
         i = [idx for idx, t in enumerate(sent['tokens']) if t is allhead][0]
         while True:
@@ -58,12 +59,15 @@ class DeprelConverter:
         if allhead is token:
             token['SurfSlot'] = head['SurfSlot']
             head['SurfSlot'] = 'flatname'
+            token['van'] = head
+        return allhead or head
         
     def convert(self, sent):
         for token in sent['tokens']:
             # punct
             if token['grammemes'] == '_' or token['deprel'] in {'cop', 'fixed', 'conj'} or token.get('propername'):
                 continue 
+                
             #############################
             # get head of token
             head = [idx for idx, t in enumerate(sent['tokens']) if t['id'] == token['head']]
@@ -71,8 +75,14 @@ class DeprelConverter:
                 head = sent['tokens'][head[0]]
             else:
                 head = None
+            if token['SemSlot'] == 'Classifier_Name_LeftComponent':
+                h = self.flatnameswap(sent, token, head)
+                if h:
+                    head = h
             # get case
             case = token['grammemes'].get('Case')
+            if token.get('van'):
+                case = token['van']['grammemes'].get('Case')
             if case and len(case) == 1:
                 case = case[0]
             elif case and len(case) == 2 and 'Genitive' in case:
@@ -80,9 +90,6 @@ class DeprelConverter:
             else:
                 case = None
             #############################
-
-            if token['SemSlot'] == 'Classifier_Name_LeftComponent':
-                self.flatnameswap(sent, token, head)
 
             ############
             ### LIKE
@@ -292,6 +299,8 @@ class DeprelConverter:
                 token['deprel'] = 'mark'
             if token['SurfSlot'] in {'Conjunction_DependentClause', 'Conjunction_NominalDependentClause'}:
                 token['deprel'] = 'mark'
+            if token['lemma'] == 'that' and head['SurfSlot'] == 'RelativeClause_DirectFiniteThat':
+                token['deprel'] = 'nsubj'
 
             ############
             ### DETS
@@ -314,6 +323,10 @@ class DeprelConverter:
             ## NSUBJs
             ############
             if token['SurfSlot'] in {'Subject', 'Idiomatic_Subject', 'Tag_Subject'}:
+                # if head.get('copula'):
+                #     copula = [t for t in sent['tokens'] if t['head'] == head['id'] and t['deprel'] == 'cop'][0]
+                #     if copula['grammemes'].get('SyntVoice') and 'SyntPassive' in copula['grammemes']['SyntVoice']:
+                #         token['deprel'] = 'nsubj:pass'
                 if head['grammemes'].get('SyntVoice') and 'SyntPassive' in head['grammemes']['SyntVoice']:
                     token['deprel'] = 'nsubj:pass'
                 else:
@@ -326,6 +339,8 @@ class DeprelConverter:
                 token['deprel'] = 'advmod'
             if token['SurfSlot'] == 'DegreeMultiplicative' and token['pos'] == 'Adverb':
                 token['deprel'] = 'advmod'
+            if token['pos'] == 'Adverb' and head['pos'] not in {'Noun', 'Pronoun'}:
+                token['deprel'] = 'advmod'
 
             ############
             ## ACL, ADVCL, XCOMP, CCOMP
@@ -334,7 +349,7 @@ class DeprelConverter:
             if head['pos'] not in {'Noun', 'Pronoun'}:
 
                 # advcl
-                if token['SurfSlot'] in self.advcl and head['pos'] not in {'Noun', 'Pronoun'} and (token['pos'] not in {'Noun', 'Pronoun'} or token.get('copula')):
+                if token['SurfSlot'] in self.advcl and (token['pos'] not in {'Noun', 'Pronoun'} or token.get('copula')):
                     token['deprel'] = 'advcl'
 
                 # xcomp
@@ -363,6 +378,8 @@ class DeprelConverter:
                         token['deprel'] = 'acl:relcl'
                     if token['SurfSlot'] == 'Clause_Finite' and token['SemSlot'] == 'Relation_Correlative': # ??
                         token['deprel'] = 'acl:relcl'
+                    if token['SurfSlot'] in self.advcl and head.get('copula'):
+                        token['deprel'] = 'advcl'
 
             # acl:cleft
             if token['SurfSlot'] == 'Cleft_Group':
@@ -403,7 +420,8 @@ class DeprelConverter:
                 usage = token['grammemes'].get('Usage')
                 # nsubj for cases like which
                 if 'SubjectUsage' in usage and token['pos'] in {'Noun', 'Pronoun'}:
-                    token['deprel'] = 'nsubj'
+                    if token['deprel'] != 'nsubj:pass':
+                        token['deprel'] = 'nsubj'
                 # csubj, csubj:pass 
                 # if 'DependentUsage' in usage and token['pos'] == 'Verb' and head['grammemes'].get('ArgumentDiathesis') == ['DiaActive_EmptySubject'] and token['SurfSlot'] != 'Adjunct_Time_FiniteForm': # костыль - чекать
                 if 'DependentUsage' in usage and token['SurfSlot'] in self.csubj:
@@ -434,7 +452,7 @@ class DeprelConverter:
             if token['SurfSlot'] in {'Modifier_Appositive_FirstLastName', 'Modifier_Appositive_InitialsOrPatronymic'}:
                 token['deprel'] = 'flat:name' # не уверена, надо править
             appcore = token['grammemes'].get('Classifying_AppositiveCore')
-            if appcore and 'ProperNamePrefix' in appcore and (not token['grammemes'].get('Usage') or token['grammemes'].get('Usage') != ['AnthroponymComponentUsage']):
+            if (appcore and 'ProperNamePrefix' in appcore and (not token['grammemes'].get('Usage') or token['grammemes'].get('Usage') != ['AnthroponymComponentUsage'])):
                 part = [t for t in sent['tokens'] if t['head'] == token['id'] and t['SurfSlot'] == 'ProperNamePrefix']
                 ## HEAD SWAP ##
                 if part:
@@ -542,7 +560,9 @@ class DeprelConverter:
                 elif head['pos'] in {'Noun', 'Pronoun'} and head['id'] > token['id']:
                     token['deprel'] = 'compound'
                 if head['pos'] in {'Verb', 'Abverb', 'Adjective'}:
-                    if deps:
+                    if token['grammemes'].get('Case') and token['grammemes']['Case'] == ["Nominative"]:
+                        token['deprel'] = 'nsubj'
+                    elif deps:
                         token['deprel'] = 'obl'
                     else:
                         token['deprel'] = 'obj' # сомнительное
@@ -640,3 +660,6 @@ class DeprelConverter:
             if token['SurfSlot'] == 'Idiomatic_AdjectivePremodifier' and head['pos'] == 'Adjective':
                 token['deprel'] = 'amod'
                 token['head'] = head['head']
+
+            if token['deprel'] is None and token['grammemes'].get('GrammaticalType') == ['GTInfinitive'] and head['pos'] in {'Noun', 'Pronoun'}:
+                token['deprel'] = 'csubj'

@@ -30,7 +30,7 @@ class Converter:
                 self.deps.convert(sent)
                 self.punct.punctheads(sent)
                 self.eudclean(sent)
-                self.semconv.convert(sent)
+                # self.semconv.convert(sent)
                 print(json.dumps(sent, ensure_ascii=False), file=out)
 
     def twoheads(self, sent):
@@ -77,7 +77,11 @@ class Converter:
                         d['copulasc'] = cop['SemSlot']
 
             else:
-                head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() != 'это'][0] # костыль хаха
+                semslots = [t for t in deps if t['SemSlot'] == 'Predicate']
+                if semslots:
+                    head = semslots[0]
+                else:
+                    head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() != 'это'][0] # костыль хаха
             head['head'] = cop['head'] 
             cop['head'] = head['id']
             for token in sent['tokens']:
