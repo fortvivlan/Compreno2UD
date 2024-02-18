@@ -5,6 +5,7 @@ CompoundAnd
 ConjunctionForNoun
 Coordinator
 Coordinator_LeftBracket
+FractionAnd
 Idiomatic_Conjunction_Postcore
 Idiomatic_Conjunction_Precore
 Idiomatic_Precore_B

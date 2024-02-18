@@ -5,6 +5,7 @@ Idiomatic_Precore_A
 Modifier_Appositive_Apostrophe
 Modifier_Appositive_NumHyphen
 Modifier_Appositive_Numeral
+Modifier_Numeral
 NominalPostModifier_LeftComma
 Number
 PseudoNumForComposite
