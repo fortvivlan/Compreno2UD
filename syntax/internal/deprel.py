@@ -14,9 +14,9 @@ class DeprelConverter:
             self.composite = {'Composite_cki', 'Composite_cko', 'Composite_ComplexNumeral', 'Composite_e', 'Composite_iko', 'Composite_null', 
                             'Composite_Numeral', 'Composite_NumeralFull', 'Composite_NumeralShort', 'Composite_o', 'Composite_ski', 'Composite_sko', 'Composite_usek'}
 
-        # if lang == 'En':
-            # en = pickle.load(open('syntax/internal/en.slots', 'rb'))
-            # self.__dict__.update(en)
+        if lang == 'En':
+            en = pickle.load(open('syntax/internal/en.slots', 'rb'))
+            self.__dict__.update(en)
 
     def headswap(self, sent, token, depcase):
         # swaps heads for token and its first dependent (probably the only one)
