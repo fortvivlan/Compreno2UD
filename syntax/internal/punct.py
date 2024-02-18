@@ -29,6 +29,7 @@ class Punctuation:
         # set heads to the rest
         self.punctuation(sent, '.,!?:;-', comma=True)
         self.emergencyhead(sent)
+        self.puncteud(sent)
 
     def punctuation_quotes(self, sent):
         """Quote head setting"""
@@ -334,6 +335,12 @@ class Punctuation:
             else:
                 sent['text'] += token['form'] + ' '
         self.senthead = [token['id'] for token in sent['tokens'] if token['head'] == 0 and token['form'] != '#NULL'][0]
+
+    def puncteud(self, sent):
+        """deps column"""
+        for token in sent['tokens']:
+            if token['grammemes'] == '_':
+                token['deps'] = f"{token['head']}:{token['deprel']}"
 
     def emergencyhead(self, sent):
         '''Shouldn't be used normally'''

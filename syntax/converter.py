@@ -108,6 +108,7 @@ class Converter:
                 semslots = [t for t in deps if t['SemSlot'] == 'Predicate']
                 if semslots:
                     head = semslots[0]
+                    head['nsubjouter'] = True
                 else:
                     head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() != 'это'][0] # костыль хаха
             head['head'] = cop['head'] 
@@ -153,6 +154,18 @@ class Converter:
                 token['head'] = headeps[0]['id']
                 token['deprel'] = 'acl'
 
+        for token in sent['tokens']:
+            if token['deprel'] != 'xcomp':
+                continue 
+            if token['grammemes'].get('GrammaticalType') != ['GTInfinitive']:
+                continue
+            head = [t for t in sent['tokens'] if t['id'] == token['head']][0]
+            if head['pos'] == 'Verb' or head.get('copula'):
+                if token['grammemes'].get('SubjectRealization') == ['SubjControlledPRO']:
+                    nsubj = [t for t in sent['tokens'] if t['head'] == head['id'] and t['deprel'] == 'nsubj']
+                    if nsubj:
+                        nsubj[0]['deps'] = f"{head['id']}:{nsubj[0]['deprel']}|{token['id']}:nsubj:xsubj"
+    
 if __name__ == '__main__':
     inputfile = 'data/smalltest.json'
     res = 'data/temp.json'

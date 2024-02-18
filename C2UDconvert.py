@@ -39,9 +39,11 @@ if __name__ == '__main__':
     ## to run in IDE:
     #################
 
-    lang = 'En'
+    lang = 'Ru'
     infile = r'data\english_full.json'
     outfile = 'data/res.conllu'
+    infile = r'data\first_coref.json'
+    outfile = 'data/resru.conllu'
     # infile = r'data\smalltest.json'
     # outfile = 'data/test.conllu'
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)

@@ -32,12 +32,13 @@ class EnhancedConverter:
                     single['deps'] = f"{cophead['id']}:conj|{single['head']}:{cophead['deprel']}"
                     single['head'] = cophead['id']
                 continue
-            conjdict[cluster][0]['deps'] = f"{conjdict[cluster][0]['head']}:{conjdict[cluster][0]['deprel']}"
+            if not conjdict[cluster][0]['deps']:
+                conjdict[cluster][0]['deps'] = f"{conjdict[cluster][0]['head']}:{conjdict[cluster][0]['deprel']}"
             for c in conjdict[cluster][1:]:
                 if not c['deps']:
-                    c['deps'] = f"{conjdict[cluster][0]['id']}:conj|{c['head']}:{c['deprel']}"
+                    c['deps'] = f"{conjdict[cluster][0]['id']}:conj|{conjdict[cluster][0]['deps']}"
                 elif 'root' not in c['deps']:
-                    c['deps'] = f"{conjdict[cluster][0]['id']}:conj|{c['deps']}"
+                    c['deps'] = f"{conjdict[cluster][0]['id']}:conj|{conjdict[cluster][0]['deps']}"
                 c['head'] = conjdict[cluster][0]['id']
                 c['deprel'] = 'conj'
 
@@ -205,6 +206,7 @@ class EnhancedConverter:
                 head = sent['tokens'][head[0]]
             else:
                 head = None
+
             deps = {t['deprel']: t['lemma'] for t in sent['tokens'] if t['head'] == token['id']}
             # get case
             case = token['grammemes'].get('Case')
@@ -217,15 +219,17 @@ class EnhancedConverter:
             #############################
         
             if token['deprel'] in {'obl', 'nmod'}:
-                if case and 'case' in deps:
+                if 'case' in deps:
+                    if deps['case'] == 'as':
+                        token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case']}"
                     if deps['case'] == 'such':
                         deps['case'] = 'such_as'
-                    if self.lang == 'Ru':
+                    if self.lang == 'Ru' and case:
                         token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case'].replace(' ', '_')}:{self.casedict[case]}"
                     else:
                         token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case'].replace(' ', '_')}"
                 elif case:
-                    if self.lang == 'Ru':
+                    if self.lang == 'Ru' and case:
                         token['deps'] = f"{token['head']}:{token['deprel']}:{self.casedict[case]}"
                     else:
                         token['deps'] = f"{token['head']}:{token['deprel']}"
@@ -249,8 +253,15 @@ class EnhancedConverter:
     
     def rest(self, sent):
         for token in sent['tokens']:
-            if token['grammemes'] == '_' or token['deps']:
+            if token['grammemes'] == '_':
                 continue 
+            # conj:and, conj:but
+            if token['lemma'] in {'and', 'but', 'or'} and token['head'] != 0:
+                head = [t for t in sent['tokens'] if t['id'] == token['head']][0]
+                if  head['deprel'] == 'conj' and head['deps'] and f"conj:{token['lemma']}" not in head['deps']:
+                    head['deps'] = head['deps'].replace('conj', f"conj:{token['lemma']}")
+            if token['deps']:
+                continue
             token['deps'] = f"{token['head']}:{token['deprel']}"
             if 'cop' in token['deps'] and token['deprel'] == None: # я заколебалась
                 token['deprel'] = 'cop'
