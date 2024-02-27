@@ -23,7 +23,7 @@ class Compreno2UD:
 
 if __name__ == '__main__':
 
-    mwe = 'morph/lwsplease.csv'
+    mwe = 'morph/total.csv'
     temp = 'data/temp.json'
  
     ## to run in command line:
@@ -39,12 +39,12 @@ if __name__ == '__main__':
     ## to run in IDE:
     #################
 
-    lang = 'Ru'
+    lang = 'En' 
     infile = r'data\english_full.json'
     outfile = 'data/res.conllu'
-    infile = r'data\first_coref.json'
-    outfile = 'data/resru.conllu'
-    # infile = r'data\smalltest.json'
+    # infile = r'data\first_coref.json'
+    # outfile = 'data/resru.conllu'
+    # infile = r'data\eng_test.json'
     # outfile = 'data/test.conllu'
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
     converter.convert()
