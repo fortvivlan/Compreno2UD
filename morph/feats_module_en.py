@@ -396,8 +396,6 @@ class Feats_module_en:
                 if lemma.lower() in {'not', 'no', 'nothing', 'never'}:#здесь еще надо поработать, мб как-то повытаскивать. захардкодить не получится
                     needed_feat['Polarity'] = 'Neg'
 
-
-
                 if type(needed_feat) == str:
                     needed_feats = needed_feat
                 else:
