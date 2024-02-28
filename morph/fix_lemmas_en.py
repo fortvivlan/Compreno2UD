@@ -19,7 +19,7 @@ class Fixes_en:
                                 '#which'} #для русского сетик был больше, но в этом датасете были только такие леммы с хэштегом
 
         self.abbrs = {'m.': 'million',
-                      'm': 'million'} #здесь переделать, давать лемму еще по семантике
+                      'm': 'million'} 
         
     def fix_lemmas_en(self, token, lemma, pos, feats, semslot) -> str:
 
@@ -32,6 +32,12 @@ class Fixes_en:
 
         if token == '\'d' and lemma == 'will':
             lemma = 'would'
+        
+        if token.lower() == 'would':
+            lemma = 'will'
+            
+        if token.lower() == 'should':
+            lemma = 'should'
 
         if token.lower() == 'she':
             lemma = 'she'

@@ -79,4 +79,7 @@ class Pos_module_en:
         if lemma.lower() in {'today', 'tomorrow', 'yesterday'}:
             pos_tag = 'NOUN'
 
+        if lemma.lower() in {'hundred', 'million', 'thousand'}:
+            pos_tag = 'NUM'
+
         return pos_tag

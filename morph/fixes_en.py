@@ -60,9 +60,10 @@ class Fixes_en:
 
 
     def bounded_tokens(self, sent):
-        '''разбивает токены и добавляет строчку'''
+        '''разбивает токены и добавляет строчку
+        '''
         # patterns
-
+        cannot = re.compile(r'cannot')
         neg_bounded = re.compile(r'[A-za-z]+n\'t') # n't
         double_ind = re.compile(r'(\d+)-(\d+)') # indexes like 12-13, 1-2 etc
         s_bounded = re.compile(r'[A-za-z]+\'s') # she's
@@ -74,7 +75,7 @@ class Fixes_en:
         for word in sent:
             divided_words = []
             stop = 0
-            if s_bounded.fullmatch(word['form']) or neg_bounded.fullmatch(word['form']) or s_end_bounded.fullmatch(word['form']) or lets_bounded.fullmatch(word['form']):
+            if s_bounded.fullmatch(word['form']) or neg_bounded.fullmatch(word['form']) or s_end_bounded.fullmatch(word['form']) or lets_bounded.fullmatch(word['form']) or cannot.fullmatch(word['form']):
                     first_token_id = word['id']
 
                     new_word = {'id': f'{first_token_id}-{first_token_id + 1}',
@@ -88,7 +89,14 @@ class Fixes_en:
                                  'SemSlot': '_', 
                                  'SemClass': '__'}
                     divided_words.append(new_word)# e.g. 12-13 window's 
+                    if cannot.fullmatch(word['form']):
+                        new_word = {'id': first_token_id, 'form': 'can', 'lemma': 'can', 'pos': 'AUX', 'p0s': word['p0s'], 'grammemes': 'VerbForm=Fin',
+                                'head': word['head'], 'deprel': word['deprel'], 'deps': word['deps'], 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
+                        divided_words.append(new_word)
 
+                        new_word = {'id': first_token_id + 1, 'form': 'not', 'lemma': 'not', 'pos': 'PART', 'p0s': '_', 'grammemes': 'Polarity=Neg',
+                                'head': word['head'], 'deprel': 'advmod', 'deps': f'{word["head"]}:advmod', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
+                        divided_words.append(new_word) 
                     if s_bounded.fullmatch(word['form']):
                         parts = s_bounded.findall(word['form'])
                         new_word = {'id': first_token_id, 'form': parts[0].replace('\'s',''), 'lemma': parts[0].replace('\'s',''), 'pos': word['pos'], 'p0s': word['p0s'], 'grammemes': word['grammemes'],
@@ -322,3 +330,133 @@ class Fixes_en:
 
                                 if sent[i]['SemClass'] == '__':
                                     sent[i]['SemClass'] = '_'
+
+
+    def merge(self, sent):
+        """
+        Сливает токены
+        """
+        
+        counter = 0
+        double_ind = 0
+        null = 0
+        while counter != len(sent) - 1:
+            c = 0
+            if '-' in str(sent[counter]['id']): 
+                double_ind += 1
+            if sent[counter]['lemma'] == '#NULL':
+                null += 1
+
+            if sent[counter]['pos'] == 'Prefixoid' and sent[counter]['form'].lower() in {"O'",  "non", "pre", "re", "multi", "anti", "co", "ex", "e", "un", "post", "pro", "post", "self", "single"}:
+                to_merge_token = sent[counter]['form']
+                id_skip = sent[counter]['id']
+                if sent[counter + 1]['form'] == '-':    # если слово через тире
+                    print('AAAAAAAAAAAAAAAA')
+                    new_token = {'id': sent[counter]['id'],
+                                    'form': to_merge_token + sent[counter + 1]['form'] + sent[counter + 2]['form'],
+                                    'lemma': to_merge_token + sent[counter + 1]['lemma'] + sent[counter + 2]['lemma'],
+                                    'pos': sent[counter + 2]['pos'],
+                                    'p0s': sent[counter + 2]['p0s'],
+                                    'grammemes': sent[counter + 2]['grammemes'],
+                                    'deprel': sent[counter + 2]['deprel'],
+                                    'deps': sent[counter + 2]['deps'],
+                                    'head': sent[counter + 2]['head'],
+                                    'misc': sent[counter + 2]['misc'],
+                                    'SemSlot': sent[counter + 2]['SemSlot'],
+                                    'SemClass': sent[counter + 2]['SemClass']}
+                    c += 2
+                    dic = {k: k for k in range(1, len(sent))}
+                    dic[id_skip] = '_'
+
+                    dic[id_skip + 1] = '_'
+                    for i in range(id_skip + 2, len(dic)):
+                        dic[i] = dic[i] - 2
+
+                    if double_ind >= 1 or null >= 1:
+                        for j in range(new_token['id'], len(sent) - c):
+                            if j == new_token['id']:
+                                del sent[j]
+                                del sent[j + 1]
+                                sent[j] = new_token
+                            else:
+                                try:
+                                    sent[j]['id'] = int(sent[j]['id']) - c
+                                except:
+                                    ValueError
+                                    s = re.match(r'(\d+)-\d+', sent[j]["id"]).group(1)
+                                    d = re.match(r'\d+-(\d+)', sent[j]["id"]).group(1)
+                                    sent[j]['id'] = f'{int(s)-c}-{int(d)-c}'
+
+                        for i in range(len(sent)):
+                            for item in dic:
+                                if sent[i]['head'] == item:
+                                    sent[i]['head'] = dic[item]
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
+                                    break        
+                                
+
+
+                    elif double_ind < 1 and null < 1:
+                        for j in range(new_token['id'] - 1, len(sent) - c):
+                            if j == new_token['id'] - 1:
+                                del sent[j]
+                                del sent[j + 1]
+                                sent[j] = new_token
+                            else:
+                                try:
+                                    sent[j]['id'] = int(sent[j]['id']) - c
+                                except:
+                                    ValueError
+                                    s = re.match(r'(\d+)-\d+', sent[j]["id"]).group(1)
+                                    d = re.match(r'\d+-(\d+)', sent[j]["id"]).group(1)
+                                    sent[j]['id'] = f'{int(s)-c}-{int(d)-c}'
+
+                        for i in range(len(sent)):
+                            for item in dic:
+                                if sent[i]['head'] == item:
+                                    sent[i]['head'] = dic[item]
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
+                                    break        
+                                
+
+                else:   # если слово не через тире
+                    new_token = {'id': sent[counter]['id'],
+                                'form': to_merge_token + sent[counter + 1]['form'],
+                                'lemma': to_merge_token + sent[counter + 1]['lemma'],
+                                'pos': sent[counter + 1]['pos'],
+                                'p0s': sent[counter + 1]['p0s'],
+                                'grammemes': sent[counter + 1]['grammemes'],
+                                'deprel': sent[counter + 1]['deprel'],
+                                'deps': sent[counter + 1]['deps'],
+                                'head': sent[counter]['head'],
+                                'misc': sent[counter + 1]['deprel'],
+                                'SemSlot': sent[counter + 1]['SemSlot'],
+                                'SemClass': sent[counter + 1]['SemClass']}
+                    c += 1
+                    dic = {k: k for k in range(1, len(sent))}
+                    dic[id_skip] = '_'
+                    for i in range(id_skip + 1, len(dic)):
+                        dic[i] = dic[i] - 1
+
+                    for j in range(new_token['id'] - 1, len(sent) - c):
+                        if j == new_token['id'] - 1:
+                            sent[j] = new_token
+                            del sent[j + 1]
+                        else:
+                            try:
+                                sent[j]['id'] = int(sent[j]['id']) - c
+                            except:
+                                ValueError
+                                s = re.match(r'(\d+)-\d+', sent[j]["id"]).group(1)
+                                d = re.match(r'\d+-(\d+)', sent[j]["id"]).group(1)
+                                sent[j]['id'] = f'{int(s)-c}-{int(d)-c}'
+                                
+
+                    for i in range(len(sent)):
+                        for item in dic:
+                            if sent[i]['head'] == item:
+                                sent[i]['head'] = dic[item]
+                                sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
+                                break
+            else:
+                counter += 1

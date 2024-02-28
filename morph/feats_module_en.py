@@ -418,7 +418,7 @@ class Feats_module_en:
             if lemma.lower() in {'today', 'tomorrow', 'yesterday'}:
                 needed_feats = 'Number=Sing'
 
-            if lemma.lower() == 'will':
+            if lemma.lower() in {'will', 'should', 'can', 'shall'}:
                 needed_feats = 'VerbForm=Fin'
 
             if lemma.lower() in {'%', '#'}:
@@ -426,6 +426,8 @@ class Feats_module_en:
 
             if lemma.lower() in {'else'}:
                 needed_feats = 'Degree=Pos'
+            if lemma.lower() in {'hundred', 'million', 'thousand'}:
+                needed_feats = 'NumForm=Word|NumType=Card'
 
             return needed_feats
     

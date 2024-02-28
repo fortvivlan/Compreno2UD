@@ -165,6 +165,8 @@ class Converter:
                         word['id'] = round(word['id'], 1)
                         if word['form'].lower() in bounded_token_list:
                             bounded_csv = 1
+                        if word['form'].lower() in {'cannot'}:
+                            bounded = 1
                         if self.neg_bounded.search(word['form']):
                             bounded = 1
                         if self.s_bounded.fullmatch(word['form']):
@@ -174,7 +176,7 @@ class Converter:
                         if word['form'] == "#NULL's" or word['form'] == '#NULL':
                             null = 1
                     
-
+                    
                     if bounded_csv:
                          self.fixes_en.csv_div(data[sent_id]['tokens'], csv_dict, bounded_token_list)
                     if bounded:
@@ -182,6 +184,8 @@ class Converter:
 
                     if null:
                         self.fixes_en.null_check(data[sent_id]['tokens'])
+
+                    self.fixes_en.merge(data[sent_id]['tokens'])
                     self.fixes_en.new_line1(data[sent_id]['tokens'])
                     
 
