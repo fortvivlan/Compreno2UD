@@ -347,11 +347,10 @@ class Fixes_en:
             if sent[counter]['lemma'] == '#NULL':
                 null += 1
 
-            if sent[counter]['pos'] == 'Prefixoid' and sent[counter]['form'].lower() in {"O'",  "non", "pre", "re", "multi", "anti", "co", "ex", "e", "un", "post", "pro", "post", "self", "single"}:
+            if (sent[counter]['pos'] == 'Prefixoid' and sent[counter]['form'].lower() in {"o'",  "non", "pre", "re", "multi", "anti", "co", "ex", "e", "un", "pro", "post", "self", "single"}) or (sent[counter + 1]['form'] == 'th' and sent[counter]['pos'] == 'NUM') or ('SurfSlot'in sent[counter] and sent[counter]["SurfSlot"] == 'Modifier_Composite_Hyphen_Adjective'):
                 to_merge_token = sent[counter]['form']
                 id_skip = sent[counter]['id']
                 if sent[counter + 1]['form'] == '-':    # если слово через тире
-                    print('AAAAAAAAAAAAAAAA')
                     new_token = {'id': sent[counter]['id'],
                                     'form': to_merge_token + sent[counter + 1]['form'] + sent[counter + 2]['form'],
                                     'lemma': to_merge_token + sent[counter + 1]['lemma'] + sent[counter + 2]['lemma'],
@@ -369,7 +368,7 @@ class Fixes_en:
                     dic[id_skip] = '_'
 
                     dic[id_skip + 1] = '_'
-                    for i in range(id_skip + 2, len(dic)):
+                    for i in range(id_skip + 2, len(dic) + 1):
                         dic[i] = dic[i] - 2
 
                     if double_ind >= 1 or null >= 1:
@@ -390,8 +389,17 @@ class Fixes_en:
                         for i in range(len(sent)):
                             for item in dic:
                                 if sent[i]['head'] == item:
+                                    a = sent[i]['head']
                                     sent[i]['head'] = dic[item]
-                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
+                                    b = sent[i]['head']
+                                    if a != '_' and b != '_':
+                                        c = int(a) - int(b)
+                                    s = re.match(r'(\d+\.\d+|\d+)', sent[i]["deps"]).group(1)
+                                    if '.' in s:
+                                        s = float(s)
+                                    else:
+                                        s = int(s)
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{s - c}:', sent[i]['deps'])
                                     break        
                                 
 
@@ -414,11 +422,19 @@ class Fixes_en:
                         for i in range(len(sent)):
                             for item in dic:
                                 if sent[i]['head'] == item:
+                                    a = sent[i]['head']
                                     sent[i]['head'] = dic[item]
-                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
+                                    b = sent[i]['head']
+                                    if a != '_' and b != '_':
+                                        c = int(a) - int(b)
+                                    s = re.match(r'(\d+\.\d+|\d+)', sent[i]["deps"]).group(1)
+                                    if '.' in s:
+                                        s = float(s)
+                                    else:
+                                        s = int(s)
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{s - c}:', sent[i]['deps'])
                                     break        
                                 
-
                 else:   # если слово не через тире
                     new_token = {'id': sent[counter]['id'],
                                 'form': to_merge_token + sent[counter + 1]['form'],
@@ -455,8 +471,17 @@ class Fixes_en:
                     for i in range(len(sent)):
                         for item in dic:
                             if sent[i]['head'] == item:
+                                a = sent[i]['head']
                                 sent[i]['head'] = dic[item]
-                                sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{sent[i]["head"]}:', sent[i]['deps'])
+                                b = sent[i]['head']
+                                if a != '_' and b != '_':
+                                    c = int(a) - int(b)
+                                s = re.match(r'(\d+\.\d+|\d+)', sent[i]["deps"]).group(1)
+                                if '.' in s:
+                                    s = float(s)
+                                else:
+                                    s = int(s)
+                                sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{s - c}:', sent[i]['deps'])
                                 break
             else:
                 counter += 1

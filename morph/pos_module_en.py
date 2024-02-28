@@ -82,4 +82,8 @@ class Pos_module_en:
         if lemma.lower() in {'hundred', 'million', 'thousand'}:
             pos_tag = 'NUM'
 
+        if lemma.lower() in {'vice', 'phono'} and pos_tag == 'Prefixoid':
+            pos_tag = 'PROPN'
+
+
         return pos_tag
