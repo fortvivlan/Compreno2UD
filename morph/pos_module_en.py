@@ -19,7 +19,7 @@ class Pos_module_en:
 
         self.symb_set = {'%', '$', '№', '°', '€','£', '+', '=', '#', '@', '~', '^', '\\','/', '&'}#set для symb
 
-    def convert_pos_en(self, token, lemma, pos_tag, feats,deprel, semclass) -> str:
+    def convert_pos_en(self, token, lemma, pos_tag, feats, deprel, semclass) -> str:
 
         '''функция для обработки частей речи'''
 
@@ -31,7 +31,7 @@ class Pos_module_en:
             pos_tag = 'PROPN'  # надо бы еще леммы title делать
         if pos_tag == 'NOUN' and 'Capitalization' in feats and feats['Capitalization'][0] == 'ProperCapitalization':
             pos_tag = 'PROPN'
-        elif (pos_tag == 'VERB' and 'TypeOfParadigm' in feats and feats['TypeOfParadigm'][0] == 'AuxiliaryVerb') or semclass == 'NEAREST_FUTURE':
+        elif (pos_tag == 'VERB' and 'TypeOfParadigm' in feats and feats['TypeOfParadigm'][0] == 'AuxiliaryVerb') or semclass == 'NEAREST_FUTURE' or deprel == 'cop':
             pos_tag = 'AUX'
         elif pos_tag == 'Conjunction':
             if 'Coordinator' in feats:
@@ -66,5 +66,20 @@ class Pos_module_en:
 
         if token in self.symb_set:
             pos_tag = 'SYM'
+        
+        if lemma.lower() == 'to' and semclass == 'PARTICLE_TO':
+            pos_tag = 'PART'
+        
+        if semclass == 'PHRASAL_PARTICLES':
+            pos_tag = 'ADP'
+        
+        if lemma.lower() == 'as' and semclass == 'COMPARATIVE_CONJUNCTIONS':
+            pos_tag = 'ADP'
+        
+        if lemma.lower() in {'today', 'tomorrow', 'yesterday'}:
+            pos_tag = 'NOUN'
+
+        if lemma.lower() in {'hundred', 'million', 'thousand'}:
+            pos_tag = 'NUM'
 
         return pos_tag

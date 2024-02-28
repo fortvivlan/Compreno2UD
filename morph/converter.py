@@ -2,7 +2,7 @@ import re, csv, pickle, json
 
 from morph.feats_module_en import Feats_module_en
 from morph.pos_module_en import Pos_module_en
-from morph.fix_lemmas_en import Fixes_en
+from morph.fixes_en import Fixes_en
 
 from morph.pos_module import Pos_module
 from morph.feats_module import Feats_module
@@ -13,7 +13,7 @@ class Converter:
     def __init__(self, lang, mwe, infile, outfile):
         self.feats_module_en = Feats_module_en()
         self.pos_module_en = Pos_module_en()
-        self.fix_lemmas_en = Fixes_en()
+        self.fixes_en = Fixes_en()
         self.lang = lang
         self.feats_module = Feats_module()
         self.fixes = Fixes('morph/ImpToPerf.txt', 'morph/pos_invariable.txt')
@@ -151,7 +151,8 @@ class Converter:
                     print(data[i]['text'])
                     bounded = 0
                     bounded_fgn = 0
-                    bounded_neg = 0
+                    bounded_csv = 0
+
                     null = 0
                     out.write(f"# sent_id = {sent_id + 1}\n")
                     out.write(f"# text = {data[sent_id]['text']}\n")
@@ -159,36 +160,33 @@ class Converter:
                     for word in data[sent_id]['tokens']:
                         word['p0s'] = word['pos']#это чтобы сохранить старые посы
                         word['pos'] = self.pos_module_en.convert_pos_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['deprel'], word['SemClass'])
-                        word['lemma'] = self.fix_lemmas_en.fix_lemmas_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'])
+                        word['lemma'] = self.fixes_en.fix_lemmas_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'])
                         
                         word['id'] = round(word['id'], 1)
                         if word['form'].lower() in bounded_token_list:
+                            bounded_csv = 1
+                        if word['form'].lower() in {'cannot'}:
                             bounded = 1
                         if self.neg_bounded.search(word['form']):
-                            bounded_neg += 1
+                            bounded = 1
                         if self.s_bounded.fullmatch(word['form']):
-                            bounded_fgn += 1
+                            bounded = 1
                         if self.s1_bounded.fullmatch(word['form']):
-                            bounded_fgn += 1
+                            bounded = 1
                         if word['form'] == "#NULL's" or word['form'] == '#NULL':
                             null = 1
                     
-
+                    
+                    if bounded_csv:
+                         self.fixes_en.csv_div(data[sent_id]['tokens'], csv_dict, bounded_token_list)
                     if bounded:
-                        self.fix_lemmas_en.csv_div(data[sent_id]['tokens'], csv_dict, bounded_token_list)
-                    if bounded_neg and bounded_fgn:
-                        self.fix_lemmas_en.bounded_neg(data[sent_id]['tokens'])
-                        self.fix_lemmas_en.bounded_s(data[sent_id]['tokens'], bounded_fgn)
-                    elif bounded_neg:
-                        self.fix_lemmas_en.bounded_neg(data[sent_id]['tokens'])
-                    elif bounded_fgn:
-                        self.fix_lemmas_en.bounded_s(data[sent_id]['tokens'], bounded_fgn)
-                    #while bounded_neg > 0:
-                    if null:
-                        self.fix_lemmas_en.null_check(data[sent_id]['tokens'])
-                    # self.fix_lemmas_en.change_head(data[sent_id]['tokens'])
-                    self.fix_lemmas_en.new_line1(data[sent_id]['tokens'])
+                        self.fixes_en.bounded_tokens(data[sent_id]['tokens'])
 
+                    if null:
+                        self.fixes_en.null_check(data[sent_id]['tokens'])
+
+                    self.fixes_en.merge(data[sent_id]['tokens'])
+                    self.fixes_en.new_line1(data[sent_id]['tokens'])
                     
 
                     for word in data[sent_id]['tokens']:
