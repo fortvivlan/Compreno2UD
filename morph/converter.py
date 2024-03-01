@@ -2,7 +2,7 @@ import re, csv, pickle, json
 
 from morph.feats_module_en import Feats_module_en
 from morph.pos_module_en import Pos_module_en
-from morph.fixes_en import Fixes_en
+from morph.fixess_en import Fixes_en
 
 from morph.pos_module import Pos_module
 from morph.feats_module import Feats_module
@@ -13,7 +13,7 @@ class Converter:
     def __init__(self, lang, mwe, infile, outfile):
         self.feats_module_en = Feats_module_en()
         self.pos_module_en = Pos_module_en()
-        self.fixes_en = Fixes_en()
+        self.fixess_en = Fixes_en()
         self.lang = lang
         self.feats_module = Feats_module()
         self.fixes = Fixes('morph/ImpToPerf.txt', 'morph/pos_invariable.txt')
@@ -160,7 +160,7 @@ class Converter:
                     for word in data[sent_id]['tokens']:
                         word['p0s'] = word['pos']#это чтобы сохранить старые посы
                         word['pos'] = self.pos_module_en.convert_pos_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['deprel'], word['SemClass'])
-                        word['lemma'] = self.fixes_en.fix_lemmas_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'])
+                        word['lemma'] = self.fixess_en.fix_lemmas_en(word['form'], word['lemma'], word['pos'], word['grammemes'], word['SemSlot'])
                         
                         word['id'] = round(word['id'], 1)
                         if word['form'].lower() in bounded_token_list:
@@ -176,17 +176,19 @@ class Converter:
                         if word['form'] == "#NULL's" or word['form'] == '#NULL':
                             null = 1
                     
-                    
+                    self.fixess_en.merge(data[sent_id]['tokens'])
+
                     if bounded_csv:
-                         self.fixes_en.csv_div(data[sent_id]['tokens'], csv_dict, bounded_token_list)
+                         self.fixess_en.csv_div(data[sent_id]['tokens'], csv_dict, bounded_token_list)
+                         
                     if bounded:
-                        self.fixes_en.bounded_tokens(data[sent_id]['tokens'])
+                        self.fixess_en.bounded_tokens(data[sent_id]['tokens'])
 
                     if null:
-                        self.fixes_en.null_check(data[sent_id]['tokens'])
+                        self.fixess_en.null_check(data[sent_id]['tokens'])
 
-                    self.fixes_en.merge(data[sent_id]['tokens'])
-                    self.fixes_en.new_line1(data[sent_id]['tokens'])
+                    
+                    self.fixess_en.new_line1(data[sent_id]['tokens'])
                     
 
                     for word in data[sent_id]['tokens']:
