@@ -23,23 +23,38 @@ class EnhancedConverter:
             elif c['head'] != 0:
                 conjdict[c['head']].append(c)
         for cluster in conjdict:
+            # conj with copula
             if len(conjdict[cluster]) == 1:
                 single = conjdict[cluster][0]
                 potentials = [t for t in sent['tokens'] if t['SurfSlot'] == single['SurfSlot'] and t['id'] != single['id']]
                 if potentials and potentials[0]['deprel'] == 'cop':
                     cophead = [t for t in sent['tokens'] if t['id'] == potentials[0]['head']][0]
-                    single['deprel'] = 'conj'
-                    single['deps'] = f"{cophead['id']}:conj|{single['head']}:{cophead['deprel']}"
-                    single['head'] = cophead['id']
+                    if single['id'] > cophead['id']:
+                        single['deprel'] = 'conj'
+                        single['deps'] = f"{cophead['id']}:conj|{single['head']}:{cophead['deprel']}"
+                        single['head'] = cophead['id']
                 continue
             if not conjdict[cluster][0]['deps']:
                 conjdict[cluster][0]['deps'] = f"{conjdict[cluster][0]['head']}:{conjdict[cluster][0]['deprel']}"
-            for c in conjdict[cluster][1:]:
+            # if the first conj is copula, then it's really a remnant from copulaswap and the real cluster is [1:]
+            if conjdict[cluster][0]['deprel'] == 'cop':
+                headid = conjdict[cluster][1]['id'] # second element is the head for conj then
+                depstext = conjdict[cluster][1]['deps']
+                if not depstext:
+                    depstext = f"{conjdict[cluster][1]['head']}:{conjdict[cluster][1]['deprel']}"
+                startidx = 2
+            else:
+                headid = conjdict[cluster][0]['id']
+                depstext = conjdict[cluster][0]['deps']
+                if not depstext:
+                    depstext = f"{conjdict[cluster][0]['head']}:{conjdict[cluster][0]['deprel']}"
+                startidx = 1
+            for c in conjdict[cluster][startidx:]:
                 if not c['deps']:
-                    c['deps'] = f"{conjdict[cluster][0]['id']}:conj|{conjdict[cluster][0]['deps']}"
+                    c['deps'] = f"{headid}:conj|{depstext}"
                 elif 'root' not in c['deps']:
-                    c['deps'] = f"{conjdict[cluster][0]['id']}:conj|{conjdict[cluster][0]['deps']}"
-                c['head'] = conjdict[cluster][0]['id']
+                    c['deps'] = f"{headid}:conj|{depstext}"
+                c['head'] = headid
                 c['deprel'] = 'conj'
 
     def ellipsisconv(self, sent):
