@@ -31,7 +31,7 @@ class Converter:
                 self.deps.convert(sent)
                 self.punct.punctheads(sent)
                 self.eudclean(sent)
-                # self.semconv.convert(sent)
+                self.semconv.convert(sent)
                 print(json.dumps(sent, ensure_ascii=False), file=out)
 
     def twoheads(self, sent):
@@ -157,8 +157,8 @@ class Converter:
         for token in sent['tokens']:
             if token['deprel'] != 'xcomp':
                 continue 
-            if token['grammemes'].get('GrammaticalType') != ['GTInfinitive']:
-                continue
+            # if token['grammemes'].get('GrammaticalType') != ['GTInfinitive']:
+            #     continue
             head = [t for t in sent['tokens'] if t['id'] == token['head']][0]
             if head['pos'] == 'Verb' or head.get('copula'):
                 if token['grammemes'].get('SubjectRealization') == ['SubjControlledPRO']:
