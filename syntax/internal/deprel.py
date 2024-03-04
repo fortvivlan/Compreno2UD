@@ -573,7 +573,7 @@ class DeprelConverter:
                     token['deprel'] = 'csubj'
 
             # InternalNoun
-            if token['SurfSlot'] in {'InternalNoun', 'One_Another', 'Quantity_Noun', 'Quantity_NounPNum', 'ReduplicationSpecComma', 'TimeMonthPrecore', 'Ellipted_Right', 'Ellipted_Left', 'LexicalDislocation_Right'}: # очень сомнительное
+            if token['SurfSlot'] in {'InternalNoun', 'One_Another', 'Quantity_Noun', 'Quantity_NounPNum', 'ReduplicationSpecComma', 'TimeMonthPrecore', 'Ellipted_Right', 'Ellipted_Left', 'LexicalDislocation_Right', 'FloatingQuantifier_Control'}: # очень сомнительное
                 if token['SurfSlot'] == 'Ellipted_Right':
                     elleft = [t for t in sent['tokens'] if t['head'] == head['id'] and t['SurfSlot'] == 'Ellipted_Left']
                     if elleft:
@@ -769,6 +769,10 @@ class DeprelConverter:
                     token['head'] = deps[0]['id']
                     outdeps[0]['deprel'] = token['deprel']
                     token['deprel'] = 'case'
+
+            ### whole, entire
+            if token['lemma'] in {'whole', 'entire'} and head['pos'] == 'Noun':
+                token['deprel'] = 'amod'
 
             # debug print
             # if token['deprel'] is None:
