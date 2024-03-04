@@ -29,6 +29,7 @@ class Punctuation:
         # set heads to the rest
         self.punctuation(sent, '.,!?:;-', comma=True)
         self.emergencyhead(sent)
+        self.conjcommas(sent)
         self.puncteud(sent)
 
     def punctuation_quotes(self, sent):
@@ -266,6 +267,18 @@ class Punctuation:
                 # print('HEAD: ', punct[i]['head'])
 
             prev = punct[i]['id']
+
+    def conjcommas(self, sent):
+        deps = {t['deprel'] for t in sent['tokens']}
+        if 'conj' not in deps:
+            return 
+        commas = [(idx, token) for idx, token in enumerate(sent['tokens']) if token['form'] == ","]
+        for idx, comma in commas:
+            if idx >= len(sent['tokens']):
+                return
+            if sent['tokens'][idx + 1]['deprel'] == 'conj':
+                comma['head'] = sent['tokens'][idx + 1]['id']
+        
 
     def apocheck(self, sent):
         """For cases like he ' ll """
