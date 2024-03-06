@@ -482,7 +482,6 @@ class Fixes_en:
                                 else:
                                     s = int(s)
                                 if s >= new_token['id'] and '|' not in sent[i]["deps"]:
-
                                     sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{s - y}:', sent[i]['deps'])
 
 
@@ -499,10 +498,8 @@ class Fixes_en:
                                     else:
                                         d = int(d)
                                     if s >= new_token['id']:
-
                                         sent[i]['deps'] = re.sub(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', f'{n - y}', sent[i]['deps']) 
-
-                                    elif m >= new_token['id']:
+                                    if m >= new_token['id']:
                                         sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{d - y}', sent[i]['deps'])
 
             else:
