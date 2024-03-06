@@ -71,7 +71,7 @@ class DeprelConverter:
     def convert(self, sent):
         for token in sent['tokens']:
             # punct
-            if token['grammemes'] == '_' or token['deprel'] in {'cop', 'fixed', 'conj'} or token.get('propername'):
+            if token['grammemes'] == '_' or token['deprel'] in {'cop', 'fixed', 'conj'} or token.get('propername') or token['lemma'] == 'out of':
                 continue 
                 
             #############################
@@ -249,6 +249,10 @@ class DeprelConverter:
                 # obl:agent
                 if token['SurfSlot'] == 'Object_Instrumental' and head['grammemes'].get('Voice') and 'Passive' in head['grammemes'].get('Voice'):
                     token['deprel'] = 'obl:agent'
+
+                # obl:tmod
+                if token['SurfSlot'] == 'TimeNPPostCore':
+                    token['deprel'] = 'obl:tmod'
 
             else:
                 # nmod 
@@ -466,7 +470,7 @@ class DeprelConverter:
             # flat:name 
             if token['SurfSlot'] == 'Modifier_ProperNamePostfix':
                 token['deprel'] = 'flat:name'
-            if token['SurfSlot'] == 'Modifier_Appositive' and token['SemSlot'] == 'Classifier_Name' and head['grammemes'].get('ArticleUsage') == ['TitleAsAddressForm']:
+            if token['SurfSlot'] == 'Modifier_Appositive' and token['SemSlot'] == 'Classifier_Name' and head['grammemes'].get('Classifying_FormOfAddress_or_Title') == ['FormOfAddress_or_Title']:
                 token['deprel'] = 'flat:name'
             if token['SurfSlot'] in {'Modifier_Appositive_FirstLastName', 'Modifier_Appositive_InitialsOrPatronymic'}:
                 token['deprel'] = 'flat:name' # не уверена, надо править
@@ -569,7 +573,7 @@ class DeprelConverter:
                     token['deprel'] = 'csubj'
 
             # InternalNoun
-            if token['SurfSlot'] in {'InternalNoun', 'One_Another', 'Quantity_Noun', 'Quantity_NounPNum', 'ReduplicationSpecComma', 'TimeMonthPrecore', 'Ellipted_Right', 'Ellipted_Left', 'LexicalDislocation_Right'}: # очень сомнительное
+            if token['SurfSlot'] in {'InternalNoun', 'One_Another', 'Quantity_Noun', 'Quantity_NounPNum', 'ReduplicationSpecComma', 'TimeMonthPrecore', 'Ellipted_Right', 'Ellipted_Left', 'LexicalDislocation_Right', 'FloatingQuantifier_Control'}: # очень сомнительное
                 if token['SurfSlot'] == 'Ellipted_Right':
                     elleft = [t for t in sent['tokens'] if t['head'] == head['id'] and t['SurfSlot'] == 'Ellipted_Left']
                     if elleft:
@@ -667,20 +671,23 @@ class DeprelConverter:
             headdeps = [t for t in sent['tokens'] if t['head'] == head['id'] and (t['grammemes'].get('Usage') == ['PredicativeUsage'] or t['grammemes'].get('Usage') == ['MainUsage'] or t['grammemes'].get('Usage') == ['IdiomaticUsage'])]
             if head['grammemes'].get('DirectSpeechDiathesis') and (token['deprel'] == 'cop' or not token['deprel']):
                 if head['id'] < token['id']:
+                    # print('ONE')
                     token['deprel'] = 'ccomp' # test
                     continue
                 ### HEAD SWAP ###
                 if not headdeps:
                     token['deprel'] = 'ccomp'
-                    # print(sent['text'], token['form'])
+                    # print('TWO', sent['text'], token['form'])
                 else:
-                    head['head'] = headdeps[0]['id']
-                    headdeps[0]['head'] = 0
-                    headdeps[0]['deprel'] = 'root'
-                    head['deprel'] = 'ccomp' # test
+                    # print('THREE')
+                    # head['head'] = headdeps[0]['id']
+                    # headdeps[0]['head'] = 0
+                    headdeps[0]['deprel'] = 'ccomp'
+                    headdeps[0]['deps'] = f"{headdeps[0]['head']}:ccomp"
+                    # head['deprel'] = 'root' # test
                 if len(headdeps) > 1:
                     for t in headdeps[1:]:
-                        t['deps'] = f"0:root|{headdeps[0]['id']}"
+                        t['deps'] = f"{headdeps[0]['id']}:conj|{t['head']}:ccomp"
                         t['deprel'] = 'conj'
                         t['head'] = headdeps[0]['id']
             if token['SemSlot'] == 'DirectSpeech' and headdeps:
@@ -688,16 +695,19 @@ class DeprelConverter:
                 head['head'] = headdeps[0]['id']
                 headdeps[0]['head'] = 0
                 headdeps[0]['deprel'] = 'root'
+                # print('FOUR')
                 head['deprel'] = 'ccomp' # test
                 if len(headdeps) > 0:
                     for h in headdeps[1:]:
                         h['head'] = headdeps[0]['id']
                         h['deprel'] = 'conj'
-                        h['deps'] = f"0:root|{headdeps[0]['id']}"
+                        h['deps'] = f"0:root|{headdeps[0]['id']}:conj"
             elif token['SemSlot'] == 'DirectSpeech':
+                # print('FIVE')
                 token['deprel'] = 'ccomp'
             copula = [t for t in sent['tokens'] if t['head'] == token['id'] and t['SemClass'] in {'BE', 'NEAREST_FUTURE'}]
             if copula and copula[0]['SemSlot'] == 'DirectSpeech':
+                # print('SIX')
                 token['deprel'] = 'ccomp' #test
 
             # просто шобы не бесило
@@ -747,6 +757,22 @@ class DeprelConverter:
             # NominalPostModifier_Comma - с вершиной в глаголе ЭКСПЕРИМЕНТАЛЬНЫЙ КОСТЫЛЬ
             if token['SurfSlot'] == 'NominalPostModifier_Comma' and head['pos'] == 'Verb':
                 token['deprel'] = 'parataxis'
+
+            ############
+            ### OUT OF
+            ############
+            
+            if token['lemma'] == 'out of':
+                outdeps = [t for t in sent['tokens'] if t['head'] == token['id'] and t['SurfSlot'] == 'Object_Indirect']
+                if outdeps:
+                    outdeps[0]['head'] = token['head']
+                    token['head'] = deps[0]['id']
+                    outdeps[0]['deprel'] = token['deprel']
+                    token['deprel'] = 'case'
+
+            ### whole, entire
+            if token['lemma'] in {'whole', 'entire'} and head['pos'] == 'Noun':
+                token['deprel'] = 'amod'
 
             # debug print
             # if token['deprel'] is None:
