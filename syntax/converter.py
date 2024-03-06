@@ -26,12 +26,13 @@ class Converter:
                 self.twoheads(sent)
                 self.deprels.convert(sent)
                 self.wayfixes(sent)
+                self.moreless(sent)
+                self.deps.convert(sent)
                 # for t in sent['tokens']:
                 #     print(t['id'], t['form'], t['head'], t['deprel'])
-                self.deps.convert(sent)
                 self.punct.punctheads(sent)
                 self.eudclean(sent)
-                # self.semconv.convert(sent)
+                self.semconv.convert(sent)
                 print(json.dumps(sent, ensure_ascii=False), file=out)
 
     def twoheads(self, sent):
@@ -40,9 +41,19 @@ class Converter:
         c = 0
         heads = [token for token in sent['tokens'] if token['head'] == 0]
         if len(heads) > 1:
-            head = heads[0]['id']
-            heads[0]['head'] = 0
-            for h in heads[1:]:
+            ihead = 0
+            while True:
+                head = heads[ihead]['id']
+                headdeps = [t['SurfSlot'] for t in sent['tokens'] if t['head'] == head]
+                if 'Conjunction_DependentClause' not in headdeps:
+                    break
+                ihead += 1
+                if ihead >= len(heads):
+                    raise Exception('Something bad with multiple heads happened')
+            heads[ihead]['head'] = 0
+            for h in heads:
+                if h['id'] == head:
+                    continue
                 h['head'] = head
                 h['deprel'] = 'conj'
                 h['deps'] = f"0:root|{head}:conj"
@@ -62,7 +73,7 @@ class Converter:
                 raise Exception 
             
             depintensity = [t for t in deps if 'DegreeIntensitySlot' in t['SurfSlot']]
-            depcompl = [t for t in deps if 'Complement' in t['SurfSlot']]
+            depcompl = [t for t in deps if 'Complement' in t['SurfSlot'] or t['lemma'] == 'out of']
             if depcompl:
                 if depcompl[0]['SurfSlot'] == 'Complement_NominalNP' and depcompl[0]['grammemes'].get('ExtendedCase') == ['ECabout']:
                     continue
@@ -80,12 +91,22 @@ class Converter:
                     depcompl[0]['SurfSlot'] = cop['SurfSlot']
                     depcompl[0]['copula'] = True 
                     depcompl[0]['copulasc'] = cop['SemSlot']
+                if depcompl[0]['lemma'] == 'out of': # out of
+                    depdep = [t for t in sent['tokens'] if t['head'] == depcompl[0]['id'] and t['SurfSlot'] == 'Object_Indirect']
+                    if depdep:
+                        head = depdep[0]
+                        depcompl[0]['head'] = head['id']
+                        depcompl[0]['deprel'] = 'case'
+                        depdep[0]['deprel'] = cop['deprel']
+                        depdep[0]['SurfSlot'] = cop['SurfSlot']
+                        depdep[0]['copula'] = True
+                        depdep[0]['copulasc'] = cop['SemSlot']
                 # the question[nsubj:outer] is where to go[root]
                 if depcompl[0]['SurfSlot'] in self.xcompslots:
                     nsubj = [t for t in sent['tokens'] if t['head'] == cop['head'] and t['SurfSlot'] == 'Subject']
                     if nsubj:
                         nsubj[0]['deprel'] = 'nsubj:outer'
-                    # conj with copula
+                # conj with copula
                 if len(depcompl) > 1:
                     for d in depcompl[1:]:
                         d['deprel'] = head['deprel']
@@ -157,14 +178,27 @@ class Converter:
         for token in sent['tokens']:
             if token['deprel'] != 'xcomp':
                 continue 
-            if token['grammemes'].get('GrammaticalType') != ['GTInfinitive']:
-                continue
+            # if token['grammemes'].get('GrammaticalType') != ['GTInfinitive']:
+            #     continue
             head = [t for t in sent['tokens'] if t['id'] == token['head']][0]
             if head['pos'] == 'Verb' or head.get('copula'):
                 if token['grammemes'].get('SubjectRealization') == ['SubjControlledPRO']:
                     nsubj = [t for t in sent['tokens'] if t['head'] == head['id'] and t['deprel'] == 'nsubj']
                     if nsubj:
                         nsubj[0]['deps'] = f"{head['id']}:{nsubj[0]['deprel']}|{token['id']}:nsubj:xsubj"
+
+    def moreless(self, sent):
+        for token in sent['tokens']:
+            if token['lemma'] not in {'more than', 'less than'}:
+                continue 
+            head = [t for t in sent['tokens'] if t['id'] == token['head']][0]
+            if head['SurfSlot'] != 'AdjunctTime':
+                continue
+            headdeps = [t for t in sent['tokens'] if t['head'] == head['id'] and t['deprel'] == 'nummod']
+            if headdeps:
+                token['head'] = headdeps[0]['id']
+                token['deprel'] = 'advmod'
+                token['deps'] = f"{token['head']}:{token['deprel']}"
     
 if __name__ == '__main__':
     inputfile = 'data/smalltest.json'
