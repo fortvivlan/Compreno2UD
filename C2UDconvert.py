@@ -42,7 +42,7 @@ if __name__ == '__main__':
     lang = 'En'
     infile = 'data/english_full.json'
     outfile = 'data/res.conllu'
-    # infile = 'data/smalltest.json'
+    # infile = 'data/eng_test.json'
     # outfile = 'data/test.conllu'
     converter = Compreno2UD(lang, mwe, infile, temp, outfile)
     converter.convert()
