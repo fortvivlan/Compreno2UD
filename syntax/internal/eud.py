@@ -252,7 +252,7 @@ class EnhancedConverter:
                 token['deps'] = f"{token['head']}:{token['deprel']}:{deps['mark'].replace(' ', '_')}"
 
     def reftag(self, sent):
-        corefs = [t for t in sent['tokens'] if t.get('IsCoref') and t['pos'] == 'Pronoun']
+        corefs = [t for t in sent['tokens'] if t.get('IsCoref') and t['lemma'] in {'which', 'that'}]
         if not corefs:
             return 
         for c in corefs:
