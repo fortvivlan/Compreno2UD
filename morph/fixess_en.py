@@ -80,7 +80,7 @@ class Fixes_en:
             divided_words = []
             stop = 0
             if word['form'] == '#NULL':
-                # print(word['form'])
+
                 null += 1
             if s_bounded.fullmatch(word['form']) or neg_bounded.fullmatch(word['form']) or s_end_bounded.fullmatch(word['form']) or lets_bounded.fullmatch(word['form']) or cannot.fullmatch(word['form']):
                     first_token_id = word['id']
@@ -96,6 +96,8 @@ class Fixes_en:
                                  'SemSlot': '_', 
                                  'SemClass': '__'}
                     divided_words.append(new_word)# e.g. 12-13 window's 
+
+                    #cannot
                     if cannot.fullmatch(word['form']):
                         new_word = {'id': first_token_id, 'form': 'can', 'lemma': 'can', 'pos': 'AUX', 'p0s': word['p0s'], 'grammemes': 'VerbForm=Fin',
                                 'head': word['head'], 'deprel': word['deprel'], 'deps': f'{word["head"]}:aux', 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
@@ -104,7 +106,7 @@ class Fixes_en:
                         new_word = {'id': first_token_id + 1, 'form': 'not', 'lemma': 'not', 'pos': 'PART', 'p0s': '_', 'grammemes': 'Polarity=Neg',
                                 'head': word['head'], 'deprel': 'advmod', 'deps': f'{word["head"]}:advmod', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
                         divided_words.append(new_word) 
-
+                    # 's
                     if s_bounded.fullmatch(word['form']):
                         parts = s_bounded.findall(word['form'])
                         new_word = {'id': first_token_id, 'form': parts[0].replace('\'s',''), 'lemma': parts[0].replace('\'s',''), 'pos': word['pos'], 'p0s': word['p0s'], 'grammemes': word['grammemes'],
@@ -112,9 +114,9 @@ class Fixes_en:
                         divided_words.append(new_word)
                         new_word = {'id': first_token_id + 1, 'form': '\'s', 'lemma': '\'s', 'pos': 'PART', 'p0s': '_', 'grammemes': '_',
                                 'head': word["id"], 'deprel': 'case', 'deps': f'{first_token_id}:case', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
-                        # print(new_word['id'], new_word['form'], new_word['head'])
+    
                         divided_words.append(new_word) 
-
+                    # n't
                     elif neg_bounded.fullmatch(word['form']):
                         parts = re.compile(r'[A-za-z]+n\'t').fullmatch(word['form'])
                         new_word = {'id': first_token_id, 'form': parts[0].replace('n\'t',''), 'lemma': word['lemma'], 'pos': word['pos'], 'p0s': word['p0s'], 'grammemes': word['grammemes'],
@@ -127,7 +129,7 @@ class Fixes_en:
                             new_word = {'id': first_token_id + 1, 'form': 'n\'t', 'lemma': 'not', 'pos': 'PART', 'p0s': '_', 'grammemes': 'Polarity=Neg',
                                 'head': word['head'], 'deprel': 'advmod', 'deps': f'{word["head"]}:advmod', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
                         divided_words.append(new_word)
-
+                    # s'
                     elif s_end_bounded.fullmatch(word['form']):
                         new_word = {'id': first_token_id, 'form': word['form'].replace('\'',''), 'lemma': word['lemma'], 'pos': word['pos'], 'p0s': word['p0s'], 'grammemes': word['grammemes'],
                                 'head': word['head'], 'deprel': word['deprel'], 'deps': word['deps'], 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
@@ -136,7 +138,7 @@ class Fixes_en:
                         new_word = {'id': word['id'] + 1, 'form': '\'', 'lemma': '\'s', 'pos': 'PART', 'p0s': '_', 'grammemes': '_',
                                     'head': first_token_id, 'deprel': 'case', 'deps': f'{first_token_id}:case', 'misc': '_', 'SemSlot': '_', 'SemClass': '__'}
                         divided_words.append(new_word)
-
+                    # let's
                     elif lets_bounded.fullmatch(word['form']):
                         new_word = {'id': first_token_id, 'form': word['form'].replace('\'s',''), 'lemma': 'let', 'pos': 'VERB', 'p0s': word['p0s'], 'grammemes': '_',
                                     'head': word['head'], 'deprel': word['deprel'], 'deps': word['deps'], 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
@@ -164,51 +166,108 @@ class Fixes_en:
                             old_word['id'] = int(old_word['id']) + 1
                         except ValueError: # если после этого следуют строки с индексом типа 15-16
                             old_word['id'] = f'{int(re.search(double_ind, old_word["id"]).group(1)) + 1}-{int(re.search(double_ind, old_word["id"]).group(2)) + 1}'
+
+
                     # меняем головы и депс по принципу: если head токена > индекса слова, которое разбиваем, то добавляем 1 к голове и депс (на 1 токен становится больше)
                     for i in range(len(sent)):
                         # поменяли головы
                         if '_' not in str(sent[i]['head']) and int(sent[i]['head']) >= (stop - number_of_bounded_words - null) and '.' not in str(sent[i]['head']):
-                            # print(sent[i]['form'], sent[i]['head'], stop, number_of_bounded_words)
                             sent[i]['head'] = int(sent[i]['head']) + 1
+
 
                         # меняем депс
                         # это если в депс есть точка
                         if dot_number.match(str(sent[i]['deps'])):
                             s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+))').match(sent[i]["deps"]).group(0)
-
                             # если в депс есть точка и разделены |
-                            if '|' in sent[i]['deps']: 
-                                d = re.match(r'.+:.+\|(\d+)', sent[i]['deps']).group(1)
 
+                            # если есть второй |
+                            if sent[i]['deps'].count('|') > 1:   
+                                d = re.match(r'\d+:.+\|(\d+):.+\|(\d+):.+', sent[i]['deps']).group(1)
+                                e = re.match(r'\d+:.+\|(\d+):.+\|(\d+):.+', sent[i]['deps']).group(2) 
+
+                                if '_' not in str(sent[i]['deps']) and int(e) >= (stop - number_of_bounded_words - null):
+                                    sent[i]['deps'] = re.sub(e, f'{int(e) + 1}', sent[i]['deps'])
+                    
                                 # для части до |
                                 if '_' not in str(sent[i]['deps']) and float(s) >= (stop - number_of_bounded_words - 1 - null):
                                     sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+))', f'{float(s) + 1}', sent[i]['deps'])
+                                #для части после |
+                                if '_' not in str(sent[i]['deps']) and float(d) >= (stop - number_of_bounded_words - null):
+                                    sent[i]['deps'] = re.sub(d, f'{int(d) + 1}', sent[i]['deps'])
 
+
+
+                            elif '|' in sent[i]['deps']: 
+                                d = re.match(r'.+:.+\|(\d+)', sent[i]['deps']).group(1)
+                                # для части до |
+                                if '_' not in str(sent[i]['deps']) and float(s) >= (stop - number_of_bounded_words - 1 - null):
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+))', f'{float(s) + 1}', sent[i]['deps'])
                                 #для части после |
                                 if '_' not in str(sent[i]['deps']) and float(d) >= (stop - number_of_bounded_words - null):
                                     sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{int(d) + 1}', sent[i]['deps'])
 
+                                
+
                             # если есть точка, но нет |
                             else:
-                                # print(word['form'], null)
                                 if '_' not in str(sent[i]['deps']) and float(s) >= (stop - number_of_bounded_words - 1 - null):
                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
+
+
 
                         # если нет точки в депс
                         else:
 
                             # если есть разделение | в депс
-                            if '|' in sent[i]['deps']:
+                            if sent[i]['deps'].count('|') > 1:
+                
+                                    s = re.match(r'(\d+):.+\|\d+', sent[i]['deps']).group(1)
+                                    d = re.match(r'\d+:.+\|(\d+):.+\|(\d+):.+', sent[i]['deps']).group(1)
+                                    e = re.match(r'\d+:.+\|(\d+):.+\|(\d+):.+', sent[i]['deps']).group(2) #если есть третий депс
+
+                                    if '_' not in str(sent[i]['deps']) and int(s) >= (stop - number_of_bounded_words - null):
+                                        sent[i]['deps'] = re.sub(s, f'{int(s) + 1}', sent[i]['deps'])
+
+                                    # меняем депс после |
+                                    if '_' not in str(sent[i]['deps']) and int(d) >= (stop - number_of_bounded_words - null):
+                                        sent[i]['deps'] = re.sub(d, f'{int(d) + 1}', sent[i]['deps'])
+
+                                    if '_' not in str(sent[i]['deps']) and int(e) >= (stop - number_of_bounded_words - null):
+                                        sent[i]['deps'] = re.sub(e, f'{int(e) + 1}', sent[i]['deps'])
+                                    
+
+
+                            
+                            elif '|' in sent[i]['deps']:
+
                                 s = re.match(r'(\d+):.+\|\d+', sent[i]['deps']).group(1)
                                 d = re.match(r'\d+:.+\|(\d+)', sent[i]['deps']).group(1)
 
-                                # меняем депс до |
-                                if '_' not in str(sent[i]['deps']) and int(s) >= (stop - number_of_bounded_words - null):
-                                    sent[i]['deps'] = re.sub(s, f'{int(s) + 1}', sent[i]['deps'])
+                                if s > d: 
+                                    # меняем депс до |
+                                    if '_' not in str(sent[i]['deps']) and int(s) >= (stop - number_of_bounded_words - null):
+                                        sent[i]['deps'] = re.sub(re.match(r'(\d+):.+\|\d+', sent[i]['deps']).group(1), f'{int(s) + 1}', sent[i]['deps'])
 
-                                # меняем депс после |
-                                if '_' not in str(sent[i]['deps']) and int(d) >= (stop - number_of_bounded_words - null):
-                                    sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{int(d) + 1}', sent[i]['deps'])
+
+                                    # меняем депс после |
+                                    if '_' not in str(sent[i]['deps']) and int(d) >= (stop - number_of_bounded_words - null):
+                                        sent[i]['deps'] = re.sub(re.match(r'\d+:.+\|(\d+)', sent[i]['deps']).group(1), f'{int(d) + 1}', sent[i]['deps'])
+
+
+                                if d > s:
+                                    # меняем депс после |
+                                    if '_' not in str(sent[i]['deps']) and int(d) >= (stop - number_of_bounded_words - null):
+                                        sent[i]['deps'] = re.sub(re.match(r'\d+:.+\|(\d+)', sent[i]['deps']).group(1), f'{int(d) + 1}', sent[i]['deps'])
+
+
+                                    if '_' not in str(sent[i]['deps']) and int(s) >= (stop - number_of_bounded_words - null):
+                                        sent[i]['deps'] = re.sub(re.match(r'(\d+):.+\|\d+', sent[i]['deps']).group(1), f'{int(s) + 1}', sent[i]['deps'])
+
+                                                                        
+                                
+
+                                
 
                             s = re.compile(r'(\d+)\:(\w+|\w+:\w+)')
 
@@ -333,12 +392,36 @@ class Fixes_en:
                                         sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{int(d) + dw}', sent[i]['deps'])
                                     
                                 else:
-                                    print(sent[i]['form'], sent[i]['deps'], s, stop, number_csv, dw)
                                     if '_' not in str(sent[i]['deps']) and float(s) >= (stop - dw):
                                         sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + dw}', sent[i]['deps'])
                             else:
-                                
-                                if '|' in sent[i]['deps']:
+                                if sent[i]['deps'].count('|') > 1:
+                    
+                                    s = re.match(r'(\d+):.+\|\d+', sent[i]['deps']).group(1)
+                                    d = re.match(r'\d+:.+\|(\d+):.+\|(\d+):.+', sent[i]['deps']).group(1)
+                                    e = re.match(r'\d+:.+\|(\d+):.+\|(\d+):.+', sent[i]['deps']).group(2) #если есть третий депс
+                                    if d > e:
+                                        if '_' not in str(sent[i]['deps']) and int(s) >= (stop - dw):
+                                            sent[i]['deps'] = re.sub(s, f'{int(s) + dw}', sent[i]['deps'])
+                                    
+                                        if '_' not in str(sent[i]['deps']) and int(d) >= (stop - dw):
+                                            sent[i]['deps'] = re.sub(d, f'{int(d) + dw}', sent[i]['deps'])
+                          
+                                        if '_' not in str(sent[i]['deps']) and int(e) >= (stop - dw):
+                                            sent[i]['deps'] = re.sub(e, f'{int(e) + dw}', sent[i]['deps'])
+                        
+                                    elif d < e: 
+                                        if '_' not in str(sent[i]['deps']) and int(s) >= (stop - dw):
+                                            sent[i]['deps'] = re.sub(s, f'{int(s) + dw}', sent[i]['deps'])
+                        
+                                        if '_' not in str(sent[i]['deps']) and int(e) >= (stop - dw):
+                                            sent[i]['deps'] = re.sub(e, f'{int(e) + dw}', sent[i]['deps'])
+                               
+                                        if '_' not in str(sent[i]['deps']) and int(d) >= (stop - dw):
+                                            sent[i]['deps'] = re.sub(d, f'{int(d) + dw}', sent[i]['deps'])
+                               
+
+                                elif '|' in sent[i]['deps']:
                                     s = re.match(r'(\d+):.+\|\d+', sent[i]['deps']).group(1)
                                     d = re.match(r'\d+:.+\|(\d+)', sent[i]['deps']).group(1)
                                     
@@ -477,6 +560,7 @@ class Fixes_en:
                                     else:
                                         m = int(m)
                                 s = re.match(r'(\d+\.\d+|\d+)', sent[i]["deps"]).group(1)
+
                                 if '.' in s:
                                     s = float(s)
                                 else:
@@ -487,8 +571,10 @@ class Fixes_en:
 
 
                                 elif '|' in sent[i]["deps"] and '_' not in str(sent[i]['deps']):
+                     
+                                    n = re.match(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+):.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
                                     d = re.match(r'.+:.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
-                                    n = re.match(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', sent[i]['deps']).group(1)
+
                                     if '.' in n:
                                         n = float(n)
                                     else:
@@ -497,10 +583,22 @@ class Fixes_en:
                                         d = float(d)
                                     else:
                                         d = int(d)
-                                    if s >= new_token['id']:
-                                        sent[i]['deps'] = re.sub(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', f'{n - y}', sent[i]['deps']) 
-                                    if m >= new_token['id']:
-                                        sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{d - y}', sent[i]['deps'])
+                
+                                    if s < m: 
+                                        if s >= new_token['id']:
+                                            sent[i]['deps'] = re.sub(str(n), f'{n - y}', sent[i]['deps']) 
+                                   
+                                        if m >= new_token['id']:
+                                            sent[i]['deps'] = re.sub(str(d), f'{d - y}', sent[i]['deps'])
+                                  
+                                    elif s > m:
+                                        if m >= new_token['id']:
+                                            sent[i]['deps'] = re.sub(str(d), f'{d - y}', sent[i]['deps'])
+                                        
+                                        if s >= new_token['id']:
+                                            sent[i]['deps'] = re.sub(str(n), f'{n - y}', sent[i]['deps']) 
+                                    
+                                                                                
 
             else:
                 counter += 1
