@@ -54,7 +54,7 @@ class DeprelConverter:
                 d['head'] = allhead['id']
         start = allhead['id']
         end = max([idx for idx, t in enumerate(sent['tokens']) if t in propdeps]) + 1
-        for i, t in enumerate(sent['tokens'][start:end]):
+        for i, t in enumerate(sent['tokens'][start + 1:end]):
             t['head'] = allhead['id'] + i
             t['deprel'] = 'flat:name'
             t['propername'] = True
@@ -62,7 +62,8 @@ class DeprelConverter:
             token['SurfSlot'] = head['SurfSlot']
             head['SurfSlot'] = 'flatname'
             token['van'] = head
-        if head['deprel'] is not None:
+        if head['deprel'] is not None and head['id'] < token['id']:
+            print('conj')
             token['deprel'] = 'conj'
             head['deprel'] = 'flat:name'
             head['head'] = token['id']
