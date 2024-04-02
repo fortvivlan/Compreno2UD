@@ -365,20 +365,22 @@ class Fixes_en:
                         if number_csv == 0:
                             number_csv +=1  
                         
-                        
                         start = sent.index(word)
                         for i in divided_words:
                             sent.insert(start, i)
                             start += 1
                         stop = sent.index(word)
+                        # print(word['id'], word['lemma'], start, stop, null)
                         sent.remove(word)
                         for old_word in sent[stop:]:
                             old_word['id'] += len(divided_words) - 1
-
+                        stop = stop - null
                         for i in range(len(sent)):
                             # поменяли головы
-                            if '_' not in str(sent[i]['head']) and int(sent[i]['head']) >= (stop) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
+                            # print(sent[i]['form'], stop, sent[i]['head'], dw)
+                            if '_' not in str(sent[i]['head']) and int(sent[i]['head']) >= (stop - dw) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
                                 sent[i]['head'] = int(sent[i]['head']) + dw
+                                # print(111111111111111)
                             # меняем депс
                             if dot_number.match(str(sent[i]['deps'])):
                                 s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+))').match(sent[i]["deps"]).group(0)
@@ -434,9 +436,11 @@ class Fixes_en:
                                 s = re.compile(r'(\d+)\:(\w+|\w+:\w+)')
 
                                 if s.fullmatch(sent[i]["deps"]):
-                                    a = int(s.fullmatch(sent[i]["deps"]).group(1))
                                     
+                                    a = int(s.fullmatch(sent[i]["deps"]).group(1))
+                                    # print(sent[i]['lemma'], dw, stop, a)
                                     if '_' not in str(sent[i]['deps']) and a >= (stop - dw) and '__' not in str(sent[i]['SemClass']):
+                                        # print(1111111111111111111)
                                         sent[i]['deps'] = re.sub(r'(\d+\:)', f'{a + dw}:', sent[i]['deps'])
 
                                 if sent[i]['SemClass'] == '__':
@@ -539,66 +543,101 @@ class Fixes_en:
                         else:
                             sent[j]['id'] = int(sent[j]['id']) - c
 
+
                 for i in range(len(sent)):
                         for item in dic:
                             if sent[i]['head'] == item:
                                 if dic[item] == '_' or sent[i]['id'] == new_token['id']:
-                                    y = 1
+                                    diff = 1
                                 else:
-                                    b = sent[i]['head']
+                                    # b = sent[i]['head']
                                     if merged == 'two':
-                                        y = 2
+                                        diff = 2
                                     elif merged =='one':
-                                        y = 1
+                                        diff = 1
                                 if sent[i]['head'] > new_token['id']:
-                                    sent[i]['head'] = sent[i]['head'] - y
-                                m = 0
+                                    sent[i]['head'] = sent[i]['head'] - diff
+                                very_second = 0
+                                # если есть разделитель
                                 if '|' in sent[i]['deps']:
-                                    m = re.match(r'.+:.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
-                                    if '.' in m:
-                                        m = float(m)
+                                    very_second = re.match(r'.+:.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
+                                    if '.' in very_second:
+                                        very_second = float(very_second)
                                     else:
-                                        m = int(m)
-                                s = re.match(r'(\d+\.\d+|\d+)', sent[i]["deps"]).group(1)
+                                        very_second = int(very_second)
+                                very_first = re.match(r'(\d+\.\d+|\d+)', sent[i]["deps"]).group(1)
 
-                                if '.' in s:
-                                    s = float(s)
+                                if '.' in very_first:
+                                    very_first = float(very_first)
                                 else:
-                                    s = int(s)
-                                if s >= new_token['id'] and '|' not in sent[i]["deps"]:
-                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{s - y}:', sent[i]['deps'])
+                                    very_first = int(very_first)
+                            
+                                    
+                                # если нет разделителя
+                                
+                                if very_first >= new_token['id'] and '|' not in sent[i]["deps"]:
+                                    # print(sent[i]['lemma'], sent[i]['deps'])
+                                    # print(sent[i]['lemma'], very_first, diff, new_token['id'])
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{very_first - diff}:', sent[i]['deps'])
 
 
-
+                                # если есть разделитель
                                 elif '|' in sent[i]["deps"] and '_' not in str(sent[i]['deps']):
                      
-                                    n = re.match(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+):.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
-                                    d = re.match(r'.+:.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
+                                    first = re.match(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+):.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
+                                    second = re.match(r'.+:.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
 
-                                    if '.' in n:
-                                        n = float(n)
+                                    if '.' in first:
+                                        first = float(first)
                                     else:
-                                        n = int(n)                       
-                                    if '.' in d:
-                                        d = float(d)
+                                        first = int(first)                       
+                                    if '.' in second:
+                                        second = float(second)
                                     else:
-                                        d = int(d)
+                                        second = int(second)
                 
-                                    if s < m: 
-                                        if s >= new_token['id']:
-                                            sent[i]['deps'] = re.sub(str(n), f'{n - y}', sent[i]['deps']) 
-                                   
-                                        if m >= new_token['id']:
-                                            sent[i]['deps'] = re.sub(str(d), f'{d - y}', sent[i]['deps'])
+                                    if very_first < very_second: 
+                                        if very_first >= new_token['id']:
+                                            sent[i]['deps'] = re.sub(str(first), f'{first - diff}', sent[i]['deps']) 
+                                        if very_second >= new_token['id']:
+                                            sent[i]['deps'] = re.sub(str(second), f'{second - diff}', sent[i]['deps'])
                                   
-                                    elif s > m:
-                                        if m >= new_token['id']:
-                                            sent[i]['deps'] = re.sub(str(d), f'{d - y}', sent[i]['deps'])
-                                        
-                                        if s >= new_token['id']:
-                                            sent[i]['deps'] = re.sub(str(n), f'{n - y}', sent[i]['deps']) 
-                                    
-                                                                                
+                                    elif very_first > very_second:
+                                        if very_second >= new_token['id']:
+                                            sent[i]['deps'] = re.sub(str(second), f'{second - diff}', sent[i]['deps'])
+                                        if very_first >= new_token['id']:
+                                            sent[i]['deps'] = re.sub(str(first), f'{first - diff}', sent[i]['deps'])       
 
+
+
+
+                            elif sent[i]['lemma'] == '#NULL' and sent[i]['deps'] != '0:root' or sent[i]['head'] == 0 and sent[i]['deps'] != '0:root':
+                                # print(11111111111111)
+                                if merged == 'two':
+                                    diff = 2
+                                elif merged =='one':
+                                    diff = 1
+
+                                very_second = 0
+                                # если есть разделитель
+                                if '|' in sent[i]['deps']:
+                                    very_second = re.match(r'.+:.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
+                                    if '.' in very_second:
+                                        very_second = float(very_second)
+                                    else:
+                                        very_second = int(very_second)
+                                very_first = re.match(r'(\d+\.\d+|\d+)', sent[i]["deps"]).group(1)
+
+                                if '.' in very_first:
+                                    very_first = float(very_first)
+                                else:
+                                    very_first = int(very_first)
+
+                                if very_first >= new_token['id'] and '|' not in sent[i]["deps"]:
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{very_first - diff}:', sent[i]['deps'])
+                                    break
+
+
+                                
             else:
                 counter += 1
