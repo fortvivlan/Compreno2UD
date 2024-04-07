@@ -29,7 +29,7 @@ class Converter:
                 self.moreless(sent)
                 self.deps.convert(sent)
                 # for t in sent['tokens']:
-                #     print(t['id'], t['form'], t['head'], t['deprel'])
+                #     print(t['id'], t['form'], t['head'], t['deprel'], t['deps'])
                 self.punct.punctheads(sent)
                 self.eudclean(sent)
                 self.semconv.convert(sent)
@@ -184,8 +184,10 @@ class Converter:
             if head['pos'] == 'Verb' or head.get('copula'):
                 if token['grammemes'].get('SubjectRealization') == ['SubjControlledPRO']:
                     nsubj = [t for t in sent['tokens'] if t['head'] == head['id'] and t['deprel'] == 'nsubj']
-                    if nsubj:
+                    if nsubj and not nsubj[0]['deps']:
                         nsubj[0]['deps'] = f"{head['id']}:{nsubj[0]['deprel']}|{token['id']}:nsubj:xsubj"
+                    elif nsubj and nsubj[0]['deps']:
+                        nsubj[0]['deps'] += f"|{token['id']}:nsubj:xsubj"
 
     def moreless(self, sent):
         for token in sent['tokens']:
