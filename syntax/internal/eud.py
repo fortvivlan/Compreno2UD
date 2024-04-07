@@ -1,4 +1,5 @@
 from collections import defaultdict
+import re
 
 class EnhancedConverter:
     def __init__(self, lang):
@@ -258,8 +259,11 @@ class EnhancedConverter:
         for c in corefs:
             try:
                 corefhead = [t for t in sent['tokens'] if t['id'] == c['IsCoref']][0]
-                corefhead['deps'] += f"|{c['deps']}"
-                c['deps'] = f"{c['IsCoref']}:ref"
+                initial = re.match(r'[\d.]+', corefhead['deps'])
+                new = re.match(r'[\d.]+', c['deps'])
+                if (initial or new) and initial.group() != new.group():
+                    corefhead['deps'] += f"|{c['deps']}"
+                    c['deps'] = f"{c['IsCoref']}:ref"
             except IndexError:
                 print(sent['text'])
                 print([(t['form'], t['IsCoref']) for t in sent['tokens'] if t.get('IsCoref')])
