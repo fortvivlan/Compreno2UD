@@ -50,14 +50,18 @@ class EnhancedConverter:
                 headid = conjdict[cluster][0]['id']
                 depstext = conjdict[cluster][0]['deps'] or f"{conjdict[cluster][0]['head']}:{conjdict[cluster][0]['deprel']}"
                 startidx = 1
-            depreltype = conjdict[cluster][0]
+            depreltype = conjdict[cluster][0]['deprel']
             for c in conjdict[cluster][startidx:]:
                 if c['deprel'] == 'cop':
                     continue
+                # if 'xsubj' in depreltype and 'nsubj' in c['deprel']:
+                #     c['deprel']
+                print(c['form'], depreltype)
                 if depreltype != c['deprel']:
                     headid = c['id']
                     depstext = c['deps'] or f"{c['head']}:{c['deprel']}"
                     depreltype = c['deprel']
+                    continue
                 if not c['deps']:
                     c['deps'] = f"{headid}:conj|{depstext}"
                 elif 'root' not in c['deps']:
