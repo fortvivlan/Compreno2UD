@@ -9,6 +9,8 @@ class EnhancedConverter:
     def convert(self, sent):
         self.caseconv(sent)
         self.conjconv(sent)
+        # for t in sent['tokens']:
+        #     print(t['id'], t['form'], t['head'], t['deprel'], t['deps'])
         self.ellipsisconv(sent)
         self.rest(sent)
         self.reftag(sent)
@@ -46,11 +48,19 @@ class EnhancedConverter:
                 startidx = 2
             else:
                 headid = conjdict[cluster][0]['id']
-                depstext = conjdict[cluster][0]['deps']
-                if not depstext:
-                    depstext = f"{conjdict[cluster][0]['head']}:{conjdict[cluster][0]['deprel']}"
+                depstext = conjdict[cluster][0]['deps'] or f"{conjdict[cluster][0]['head']}:{conjdict[cluster][0]['deprel']}"
                 startidx = 1
+            depreltype = conjdict[cluster][0]['deprel']
             for c in conjdict[cluster][startidx:]:
+                if c['deprel'] == 'cop':
+                    continue
+                # if 'xsubj' in depreltype and 'nsubj' in c['deprel']:
+                #     c['deprel']
+                if depreltype != c['deprel']:
+                    headid = c['id']
+                    depstext = c['deps'] or f"{c['head']}:{c['deprel']}"
+                    depreltype = c['deprel']
+                    continue
                 if not c['deps']:
                     c['deps'] = f"{headid}:conj|{depstext}"
                 elif 'root' not in c['deps']:
