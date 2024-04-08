@@ -56,7 +56,6 @@ class EnhancedConverter:
                     continue
                 # if 'xsubj' in depreltype and 'nsubj' in c['deprel']:
                 #     c['deprel']
-                print(c['form'], depreltype)
                 if depreltype != c['deprel']:
                     headid = c['id']
                     depstext = c['deps'] or f"{c['head']}:{c['deprel']}"
