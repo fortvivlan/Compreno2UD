@@ -25,6 +25,10 @@ class Converter:
         self.s1_bounded = re.compile(r'[A-za-z]+s\'')
         self.hasch_number = re.compile(r'\d+#:\d+')
         self.neg_bounded = re.compile(r'[A-za-z]+n\'t')
+        self.num_bounded = re.compile(r'(\d+-\d+) (\d+-\d+)')
+        self.num3_bounded = re.compile(r'(\d+-\d+) (\d+-\d+) (\d+-\d+)')
+        self.num4_bounded = re.compile(r'(\d+-\d+) (\d+-\d+) (\d+-\d+) (\d+-\d+)')
+
         self.mwe = mwe
         self.infile = infile
         self.outfile = outfile
@@ -173,6 +177,13 @@ class Converter:
                             bounded = 1
                         if self.s1_bounded.fullmatch(word['form']):
                             bounded = 1
+                        if self.num_bounded.fullmatch(word['form']):
+                            bounded = 1
+                        if self.num3_bounded.fullmatch(word['form']):
+                            bounded = 1   
+                        if self.num4_bounded.fullmatch(word['form']):
+                            bounded = 1
+                        
                         if word['form'] == "#NULL's" or word['form'] == '#NULL':
                             null = 1
                     
@@ -216,8 +227,19 @@ class Converter:
 
                         if 'ReferenceClass' in word['grammemes'] and word['grammemes']['ReferenceClass'][0] == 'RCRelative':
                             for word1 in data[sent_id]['tokens']:
-                                if word1['id'] == word['head'] and word1['deprel'] == 'acl:relcl':
+                                if word1['id'] == word['head'] and (word1['deprel'] == 'acl:relcl' or word1['deprel'] == 'advcl:relcl' or word1['deprel'] == 'advcl'):
                                     ud_feats = 'PronType=Rel'
+                        if not ud_feats and word['p0s'] == 'Prefixoid':
+                            print(word['lemma'], ud_feats)
+                            for word1 in data[sent_id]['tokens']:
+                                if word1['id'] == word['head'] and 'Number' in word1['grammemes'] and word1['grammemes']['Number'][0] == 'Singular':
+                                    ud_feats = 'Number=Sing'
+
+
+                        ### это переделать
+                        if not ud_feats:
+                            ud_feats = '_'
+
 
 
                         if word['misc'] == 'None':

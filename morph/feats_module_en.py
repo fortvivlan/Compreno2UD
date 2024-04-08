@@ -58,7 +58,12 @@ class Feats_module_en:
                 needed_feat = {k: v for k, v in feats.items() if k in self.pos_feats[pos]}
                 if 'FiniteClass' in needed_feat:
                     needed_feat['VerbForm'] = needed_feat.pop('FiniteClass')
-                #если глагол:
+
+
+                #ЛЕКСИЧЕСКИЙ ГЛАГОЛ:
+
+
+
                 if pos == 'VERB':
                     #тут можно разглядеть только три категории (все, кроме Fin)
                     #сразу отделим герундии от причастий
@@ -70,8 +75,6 @@ class Feats_module_en:
                             if 'Number' in needed_feat:
                                     needed_feat.pop('Number')
 
-
-                                
                         #это для причастий 2 типа
                         elif needed_feat['Type'][0] == 'ParticipleTwo':
                             needed_feat['VerbForm'] = 'Part'
@@ -79,7 +82,6 @@ class Feats_module_en:
                             if 'Number' in needed_feat:
                                     needed_feat.pop('Number')
                         
-                
                         #это для герундиев, которые указаны в лоб в финит класс или семслот у них подходящий (иногда они совпадают, но не всегда)
                         elif 'VerbForm' in needed_feat and needed_feat['VerbForm'][0] == 'Gerund':
                             needed_feat['VerbForm'] = 'Ger'
@@ -95,10 +97,8 @@ class Feats_module_en:
                                     needed_feat.pop('Number') 
                             else:
                                 needed_feat.pop('SyntVoice')
-                    #и тут удаляем ненужное
                    
-                    #part и ger закрыли(надеюсь) переходим к Fin и Inf
-
+                    #переходим к Fin и Inf
                     #инфинитив у обычных глаголов определяется просто - для них он указан в финит класс
                     elif 'VerbForm' in needed_feat:
                         if needed_feat['VerbForm'][0] == 'BareInfinitive' or needed_feat['VerbForm'][0] == 'Infinitive':
@@ -115,8 +115,16 @@ class Feats_module_en:
                         needed_feat.pop('PresenceOfAuxiliaryVerb')
                     #хочется верить, что с лексическими глаголами на этом всё
                     
-                #если у нас глагол вспомогательный, фичу Verbform мы ему иначе вытаскиваем
 
+
+
+
+                # ВСПОМОГАТЕЛЬНЫЙ ГЛАГОЛ
+
+
+
+
+                #если у нас глагол вспомогательный, фичу Verbform мы ему иначе вытаскиваем
                 if pos == 'AUX': #модальные глаголы (GTVerbModal) - вспомогательные и финитные
                     #здесь финитные глаголы
                     if needed_feat['GrammaticalType'][0] == 'GTVerbModal' or needed_feat['GrammaticalType'][0] == 'GTVerb':
@@ -125,18 +133,17 @@ class Feats_module_en:
                     #здесь инфинитивы
                     elif needed_feat['GrammaticalType'][0] == 'GTInfinitive':
                         needed_feat['VerbForm'] = 'Inf'
-
                     #опять с причастиями и герундиями разребем (надеюсь, что сработает как для лексических глаголов)
                     elif needed_feat['GrammaticalType'][0] == 'GTParticiple':
                         #это для причастий 1 типа, по идее герундии сюда не входят
                         if needed_feat['Type'][0] == 'ParticipleOne' and 'PresenceOfAuxiliaryVerb' in needed_feat and needed_feat['PresenceOfAuxiliaryVerb'][0] == 'AuxPlus':
                             needed_feat['VerbForm'] = 'Part'
-                            needed_feat['Tense'] == 'Pres'
+                            needed_feat['Tense'] = 'Pres'
                         #это для причастий 2 типа
                         elif needed_feat['Type'][0] == 'ParticipleTwo':
+                            print(token, lemma)
                             needed_feat['VerbForm'] = 'Part'
-                            needed_feat['Tense'] == 'Past'
-                    
+                            needed_feat['Tense'] = 'Past'
                         #это для герундиев, которые указаны в лоб в финит класс или семслот у них подходящий (иногда они совпадают, но не всегда)
                         elif 'VerbForm' in needed_feat and needed_feat['VerbForm'][0] == 'Gerund':
                             needed_feat['VerbForm'] = 'Ger'
@@ -155,32 +162,61 @@ class Feats_module_en:
                     if 'PresenceOfAuxiliaryVerb' in needed_feat:
                         needed_feat.pop('PresenceOfAuxiliaryVerb')
 
+
+
+
+
+                # ПАДЕЖ
+
+
                 if 'Case' in needed_feat:
                     if needed_feat['Case'][0] in self.case_set and lemma.lower() in self.pers_pron: 
                         needed_feat['Case'] = self.case_set[needed_feat['Case'][0]]
                     else:
                         needed_feat.pop('Case')
 
-                # if 'Case' in needed_feat:
-                    # почему-то эта строчка не работает, понять никак не могу почему, цикл выше был похожим и тоже не работал, так что я захардкодила местоимения..... upd: все поняла 
-                    # if pos == 'PRON' and 'Possessiveness' in needed_feat and needed_feat['Possessiveness'][0] == 'Possessive':
+
+
+                # ПРИТЯЖАТЕЛЬНЫЕ МЕСТОИМЕНИЯ
+
+
+
                 if lemma.lower() in self.posspron: 
                     needed_feat['Case'] = 'Gen'#whose не в генетиве upd: хотя в документации к местоимениям есть вот такая строчка TODO: add Case=Gen for whose
                     needed_feat['Poss'] = 'Yes'#для притяжательных местоимений
-                                        
+
+
+
+                # МЕСТОИМЕНИЯ ИНТЕРРОГАТИВЫ
                 if 'TypeOfWH_ForLexicalClasses' in needed_feat: 
                     if needed_feat['TypeOfWH_ForLexicalClasses'][0] == 'Interrog_LC':
                         needed_feat.pop('TypeOfWH_ForLexicalClasses')
                         needed_feat = 'PronType=Int'
                     else:
                         needed_feat.pop('TypeOfWH_ForLexicalClasses')
-                #фича Reflex=Yes
+
+
+                
+                # ФИЧА Reflex=Yes ДЛЯ МЕСТОИМЕНИЙ
+
+
+
                 if pos == 'PRON':
                     if 'TypeOfAnaphoricPronoun' in needed_feat and needed_feat['TypeOfAnaphoricPronoun'][0] == 'Reflexive_Syntactic':
                         needed_feat.pop('TypeOfAnaphoricPronoun')
                         needed_feat['Reflex'] = 'Yes'
-                #фича PronType будет здесь, всего значений может быть 10 для англа: prs-личные, art-артикли, int, rel, dem, emp, neg, rcp - реципроки, tot, ind-indefinite
+
+
+
+                # ФИЧА PRONTYPE
+
+
+
+
+                # фича PronType будет здесь, всего значений может быть 10 для англа: 
+                # prs-личные, art-артикли, int, rel, dem, emp, neg, rcp - реципроки, tot, ind-indefinite
                 if pos == 'PRON':
+
                     if 'TypeOfAnaphoricPronoun' in needed_feat and needed_feat['TypeOfAnaphoricPronoun'][0] == 'Reciprocal':
                         needed_feat.pop('TypeOfAnaphoricPronoun')
                         needed_feat['PronType'] = 'Rcp'#each other's есть в лексемах с пробелами! а PronType=Rcp добавить для each - добавила в .csv
@@ -207,13 +243,21 @@ class Feats_module_en:
                     elif 'TypeOfReferenceAndFinalQuantification' in needed_feat and needed_feat['TypeOfReferenceAndFinalQuantification'][0] not in self.ind_pron:
                         needed_feat.pop('TypeOfReferenceAndFinalQuantification')
 
-                    if semclass == 'DEMONSTRATIVE':
+                    if semclass == 'DEMONSTRATIVE' or lemma in {'this', 'these', 'those', 'that'}:
                         needed_feat['PronType'] = 'Dem'
                         needed_feat.pop('Person')
                     if lemma.lower() in {'nothing', 'nobody'}:
                         needed_feat['PronType'] = 'Neg'
                     if lemma.lower() not in self.pers_pron and 'Person' in needed_feat:
                         needed_feat.pop('Person')
+
+
+
+
+                # DET
+
+
+
 
                 if pos == 'DET':
                     #артикли
@@ -225,15 +269,18 @@ class Feats_module_en:
                         needed_feat.pop('PartletOfSpeech')
                         needed_feat['Definite'] = 'Def'
                         needed_feat['PronType'] = 'Art'
+                    elif lemma.lower() in 'the':
+                        needed_feat['Definite'] = 'Def'
+                        needed_feat['PronType'] = 'Art'                       
                     elif 'PartletOfSpeech' in needed_feat:
                         needed_feat.pop('PartletOfSpeech')
                     #prontype=tot
                     if lemma.lower() in {'all','both', 'each', 'every'}:
                         needed_feat['PronType'] = 'Tot'
-                    #и тем, и другим число и лицо не нужно
+                    # ни тем, ни другим число и лицо не нужно
                     if 'Person' in needed_feat:
                         needed_feat.pop('Person')
-                    if semclass == 'DEMONSTRATIVE':
+                    if semclass == 'DEMONSTRATIVE' or lemma in {'this', 'these', 'those', 'that'}:
                         needed_feat['PronType'] = 'Dem'
                     elif 'Number' in needed_feat:
                         needed_feat.pop('Number')
@@ -251,7 +298,11 @@ class Feats_module_en:
                     
 
                         # relative and interrogative prons (WDT, WP, WP$ or WRB) будут зависеть от синтаксиса (если у их вершины будет dep acl:relcl, то это rel, если нет, то int)
-                                                
+                # РОД
+
+
+
+
                 if 'Gender' in needed_feat:
                     '''тут даем род, по документации только местоимениям 3-го лица, ед.ч.тут все просто Fem для she, Masc для he, Neut для it и их форм'''
                     #короче пофиг, захардкодила их, местоимения эти, а то код на пол-экрана, если их выискивать
