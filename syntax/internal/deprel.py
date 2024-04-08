@@ -228,6 +228,27 @@ class DeprelConverter:
                     token['head'] = deps[0]['id']
                     token['dep'] = 'mark'
 
+            # bug fix for RelativeGroup and det = CHECK
+            if token['SurfSlot'] == 'RelativeGroup' and token['pos'] == 'Noun':
+                headeps = [t for t in sent['tokens'] if t['head'] == head['id'] and t['form'] == '#NULL']
+                if headeps:
+                    if headeps[0]['SurfSlot'] in self.obj and head['pos'] not in {'Noun', 'Pronoun'}:
+                        token['deprel'] = 'obj'
+                        continue
+                    elif headeps[0]['SurfSlot'] in self.iobj and head['pos'] not in {'Noun', 'Pronoun'}:
+                        token['deprel'] = 'iobj'
+                        continue
+                    elif headeps[0]['SurfSlot'] in self.oblnmod and head['pos'] not in {'Noun', 'Pronoun'}:
+                        token['deprel'] = 'obl'
+                        dependentadp = [t for t in sent['tokens'] if t['head'] == headeps[0]['id'] and t['pos'] == 'Preposition']
+                        if dependentadp:
+                            token['deps'] = f"{token['id']}:obl:{dependentadp[0]['lemma']}"
+                        continue
+                    else:
+                        token['SurfSlot'] = headeps[0]['SurfSlot']
+                else:
+                    token['deprel'] = 'obj'
+
             ########################
             ### OBJ, IOBJ, OBL, NMOD
             ########################
@@ -272,10 +293,6 @@ class DeprelConverter:
                     token['deprel'] = 'obj'
 
             ############
-
-            # amod
-            if token['SurfSlot'] in self.amod and head['pos'] in {'Noun', 'Pronoun'} and token['pos'] != 'Noun':
-                token['deprel'] = 'amod'
 
             ############
             ### NUMMODS
@@ -327,7 +344,10 @@ class DeprelConverter:
             ############
 
             # ru, en det 
-            if token['lemma'] in self.detlist or token['SurfSlot'] in self.det: # lang spec - check rus for demonstrative
+            if token['lemma'] in self.detlist or (token['SurfSlot'] in self.det and token['pos'] != 'Noun'): # lang spec - check rus for demonstrative
+                if head['pos'] == 'Verb':
+                    token['deprel'] = 'xcomp'
+                    continue
                 token['deprel'] = 'det'
             if self.lang == 'Ru' and token['pos'] == 'Pronoun' and token['grammemes'].get('Classifying_Possessiveness'):
                 token['deprel'] = 'det'
@@ -338,6 +358,9 @@ class DeprelConverter:
             if token['SurfSlot'] == 'Such' and sent['tokens'][token['id']]['lemma'] == 'a':
                 token['deprel'] = 'det:predet'
 
+            # amod
+            if token['SurfSlot'] in self.amod and head['pos'] in {'Noun', 'Pronoun'} and token['pos'] != 'Noun':
+                token['deprel'] = 'amod'
 
             ############
             ## NSUBJs
