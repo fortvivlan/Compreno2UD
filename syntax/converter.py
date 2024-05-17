@@ -59,7 +59,7 @@ class Converter:
                 h['deps'] = f"0:root|{head}:conj"
 
     def copulaswap(self, sent):
-        copulas = [t for t in sent['tokens'] if t['SemClass'] in {'BE', 'NEAREST_FUTURE'} and t['lemma'] != 'about'] # check EXTERNAL_NECESSITY
+        copulas = [t for t in sent['tokens'] if t['SemClass'] in {'BE', 'NEAREST_FUTURE'} and t['lemma'] not in {'about', 'находиться'}] # check EXTERNAL_NECESSITY
         if not copulas:
             return 
         for cop in copulas:
@@ -70,7 +70,7 @@ class Converter:
                 continue
 
             if len(deps) < 1:
-                raise Exception 
+                continue
             
             depintensity = [t for t in deps if 'DegreeIntensitySlot' in t['SurfSlot']]
             depcompl = [t for t in deps if 'Complement' in t['SurfSlot'] or t['lemma'] == 'out of']
