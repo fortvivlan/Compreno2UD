@@ -39,8 +39,8 @@ if __name__ == '__main__':
     ## to run in IDE:
     #################
 
-    lang = 'En'
-    infile = 'data/english_full.json'
+    lang = 'Ru'
+    infile = 'data/russian_full.json'
     outfile = 'data/res.conllu'
     # infile = 'data/eng_test.json'
     # outfile = 'data/test.conllu'
