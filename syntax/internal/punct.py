@@ -11,12 +11,19 @@ class Punctuation:
     
     def punctheads(self, sent):
         """Main method"""
-        try:
-            self.senthead = [token['id'] for token in sent['tokens'] if token['head'] == 0 and token['form'] != '#NULL'][0] # если 0 вершин, вывалится
-        except IndexError:
-            for token in sent['tokens']:
-                print(token['id'], token['form'], token['head'], sep='\t')
-            raise
+        nonulls = [token['id'] for token in sent['tokens'] if token['head'] == 0 and token['form'] != '#NULL']
+        if len(nonulls) != 0:
+            self.senthead = nonulls[0]
+        else:
+            nullheads = [token for token in sent['tokens'] if token['head'] == 0]
+            if len(nullheads) == 0:
+                for token in sent['tokens']:
+                    print(token['id'], token['form'], token['head'], sep='\t')
+                raise IndexError
+            if len(nullheads) == 1:
+                nulldeps = [token for token in sent['tokens'] if token['head'] == nullheads[0]['id']]
+                if nulldeps:
+                    self.senthead = nulldeps[0]['id']
         self.tokens = [token for token in sent['tokens'] if token['pos'] != 'PUNCT' and '.' not in str(token['id'])]
         # set heads to quotes
         self.punctuation_quotes(sent)

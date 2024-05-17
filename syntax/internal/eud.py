@@ -4,7 +4,7 @@ import re
 class EnhancedConverter:
     def __init__(self, lang):
         self.lang = lang 
-        self.casedict = {'Nominative': 'nom', 'Genitive': 'gen', 'Accusative': 'acc', 'Instrumental': 'ins', 'Locative': 'loc', 'Prepositional': 'loc', 'Dative': 'dat', 'Vocative': 'voc'}
+        self.casedict = {'Nominative': 'nom', 'Genitive': 'gen', 'Accusative': 'acc', 'Instrumental': 'ins', 'Locative': 'loc', 'Prepositional': 'loc', 'Dative': 'dat', 'Vocative': 'voc', 'Partitive': 'gen'}
 
     def convert(self, sent):
         self.caseconv(sent)
@@ -236,9 +236,11 @@ class EnhancedConverter:
             deps = {t['deprel']: t['lemma'] for t in sent['tokens'] if t['head'] == token['id']}
             # get case
             case = token['grammemes'].get('Case')
-            if case and len(case) == 1:
+            if case and len(case) == 1 and case != ['ZeroCase']:
                 case = case[0]
-            elif case and len(case) == 2 and 'Genitive' in case:
+            elif case and len(case) == 2 and ('Genitive' in case or 'Partitive' in case):
+                case = 'Genitive'
+            elif case and 'Partitive' in case:
                 case = 'Genitive'
             else:
                 case = None

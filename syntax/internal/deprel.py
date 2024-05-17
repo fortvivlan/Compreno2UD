@@ -63,7 +63,7 @@ class DeprelConverter:
             head['SurfSlot'] = 'flatname'
             token['van'] = head
         if head['deprel'] is not None and head['id'] < token['id']:
-            print('conj')
+            # print('conj')
             token['deprel'] = 'conj'
             head['deprel'] = 'flat:name'
             head['head'] = token['id']
