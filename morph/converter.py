@@ -85,15 +85,21 @@ class Converter:
                         if self.hasch_number.search(word['form']):
                             word['form'] = word['form'].replace('#', '')
                             word['lemma'] = word['form']
+
                         if word['form'].lower() in bounded_token_list:
                             bounded = 1
                         if self.foreign_bounded_token.search(word['form']) or self.number_bounded.fullmatch(word['form']):
                             bounded_fgn = 1
                     if bounded:
                         self.fixes.indexation_bounded_csv(data[sent_id]['tokens'], csv_dict, bounded_token_list)
+
                     if bounded_fgn:
                         self.fixes.bounded_foreign(data[sent_id]['tokens'])
                     self.fixes.merge(data[sent_id]['tokens'])
+
+                    # for i in range(len(data[sent_id]['tokens'])):
+                    #     if data[sent_id]['tokens'][i]['id'] == data[sent_id]['tokens'][i - 1]['id']:
+                    #         print(data[sent_id]['tokens'][i]['form'])
 
                     for word in data[sent_id]['tokens']:
                         word_counter = len(data[sent_id]['tokens'])
@@ -230,7 +236,7 @@ class Converter:
                                 if word1['id'] == word['head'] and (word1['deprel'] == 'acl:relcl' or word1['deprel'] == 'advcl:relcl' or word1['deprel'] == 'advcl'):
                                     ud_feats = 'PronType=Rel'
                         if not ud_feats and word['p0s'] == 'Prefixoid':
-                            print(word['lemma'], ud_feats)
+                            # print(word['lemma'], ud_feats)
                             for word1 in data[sent_id]['tokens']:
                                 if word1['id'] == word['head'] and 'Number' in word1['grammemes'] and word1['grammemes']['Number'][0] == 'Singular':
                                     ud_feats = 'Number=Sing'
