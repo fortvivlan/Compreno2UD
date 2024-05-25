@@ -29,6 +29,7 @@ class DeprelConverter:
         token['head'] = newhead
 
     def flatnameswap(self, sent, token, head):
+        # print('Swap pair token head:', token['form'], token['head'], head['form'], head['head'])
         # flat:name swaps
         if token['SurfSlot'] == 'Modifier_Composite_Hyphen':
             return
@@ -43,21 +44,48 @@ class DeprelConverter:
             allhead['head'] = head['head']
             allhead['deprel'] = head['deprel']
         propdeps = []
+        if allhead['id'] > token['id']:
+            allhead = token
+            # token['head'] = allhead['head']
+        # else:
+        #     s = allhead
         i = [idx for idx, t in enumerate(sent['tokens']) if t is allhead][0]
         while True:
-            if not (sent['tokens'][i]['SurfSlot'] == 'ProperNamePrefix' or sent['tokens'][i]['grammemes'] != '_' and sent['tokens'][i]['grammemes'].get('Classifying_Proper')):
+            if not (sent['tokens'][i]['SurfSlot'] == 'ProperNamePrefix' or 
+                    sent['tokens'][i]['grammemes'] != '_' and 
+                    sent['tokens'][i]['grammemes'].get('Classifying_Proper') or 
+                    (sent['tokens'][i]['form'] == '-' and self.lang == 'Ru')):
                 break
-            propdeps.append(sent['tokens'][i])
+            if sent['tokens'][i]['form'] != '-':
+                propdeps.append(sent['tokens'][i])
             i += 1
         for d in deps:
             if d is not allhead:
                 d['head'] = allhead['id']
-        start = allhead['id']
-        end = max([idx for idx, t in enumerate(sent['tokens']) if t in propdeps]) + 1
-        for i, t in enumerate(sent['tokens'][start + 1:end]):
-            t['head'] = allhead['id'] + i
-            t['deprel'] = 'flat:name'
-            t['propername'] = True
+        if propdeps:
+            if propdeps[-1]['form'] == '-':
+                del propdeps[-1]
+            start = allhead['id']
+            end = max([idx for idx, t in enumerate(sent['tokens']) if t in propdeps]) + 1
+            heads = [t for t in propdeps if t['head'] < start or t['head'] > end]
+            if heads:
+                candidate = [t for t in sent['tokens'] if t['id'] == heads[0]['head']]
+                if candidate:
+                    allhead = candidate[0]
+            # КОСТЫЛЬ time
+            c = 0
+            hyph = -1
+            for i, t in enumerate(sent['tokens'][start + 1:end]):
+                if t['form'] == '-':
+                    hyph += 1
+                    continue
+                t['head'] = allhead['id'] + c + hyph
+                if i == 0:
+                    t['head'] += 1
+                t['deprel'] = 'flat:name'
+                t['propername'] = True
+                c += 1
+
         if allhead is token:
             token['SurfSlot'] = head['SurfSlot']
             head['SurfSlot'] = 'flatname'
@@ -201,19 +229,27 @@ class DeprelConverter:
             if token['SurfSlot'] in self.case or token['pos'] == 'Preposition': # на всякий
                 token['deprel'] = 'case'
             ## HEAD SWAP ##
+            if head is None:
+                print(sent['text'])
             if head['lemma'] == 'согласно':
                 token['deprel'] = 'obl'
                 continue
             if token['lemma'] == 'согласно':
+                headofhead = None
                 token['deprel'] = 'case'
-                if head['pos'] == 'Noun': # lang spec - пока костыль
-                    head['head'] = token['head']
-                    token['head'] = head['id']
-                elif head['pos'] == 'Verb':
-                    deps = [t for t in sent['tokens'] if t['head'] == token['id'] and t['pos'] in {'Noun', 'Pronoun'}]
-                    if deps:
-                        deps[0]['head'] = token['head']
-                        token['head'] = deps[0]['id']
+                # if head['pos'] == 'Noun': # lang spec - пока костыль
+                #     head['head'] = token['head']
+                #     token['head'] = head['id']
+                # if head['pos'] == 'Verb':
+                if head['pos'] in {'Noun', 'Pronoun'}:
+                    headofhead = [t['id'] for t in sent['tokens'] if t['id'] == head['head']]
+                    if not headofhead:
+                        raise Exception('Согласно говну')
+                    headofhead = headofhead[0]
+                deps = [t for t in sent['tokens'] if t['head'] == token['id'] and t['pos'] in {'Noun', 'Pronoun'}]
+                if deps:
+                    deps[0]['head'] = headofhead or token['head']
+                    token['head'] = deps[0]['id']
                 continue
 
             # as to why - CHECK
@@ -263,7 +299,7 @@ class DeprelConverter:
                     token['deprel'] = 'iobj'
 
                 # obl 
-                if token['SurfSlot'] in self.oblnmod:
+                if token['SurfSlot'] in self.oblnmod and token['pos'] != 'Verb':
                     token['deprel'] = 'obl'
 
                 if token['SurfSlot'] in self.npmod:
