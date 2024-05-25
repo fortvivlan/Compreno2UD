@@ -1,17 +1,18 @@
 import json
 from syntax.internal import *
 from syntax.semantics.semantics import Semconverter
-
+from tqdm import tqdm
 
 class Converter:
     """Main Syntax converter class"""
-    def __init__(self, lang, infile, output):
+    def __init__(self, lang, infile, output, numlines):
         self.xcompslots = {'Complement_Clausal', 'Complement_Clausal_Comma', 
                            'Complement_Clausal_NoControl', 'Complement_DirectSpeech', 
                            'Complement_Infinitive', 'Complement_SpQuClause',
                            'Complement_SpQuClause', 'Complement_ThatClause'}
         self.infile = infile 
         self.output = output 
+        self.numlines = numlines
         self.punct = Punctuation()
         self.deprels = DeprelConverter(lang)
         self.deps = EnhancedConverter(lang)
@@ -20,16 +21,17 @@ class Converter:
     def convert(self):
         """Main method"""
         with open(self.infile, 'r', encoding='utf8') as inp, open(self.output, 'w', encoding='utf8') as out:
-            for line in inp:
+            for line in (pbar := tqdm(inp, total=self.numlines)):
+                pbar.set_description('Syntax conversion: ')
                 sent = json.loads(line)
                 self.copulaswap(sent) #test
                 self.twoheads(sent)
                 self.deprels.convert(sent)
                 self.wayfixes(sent)
                 self.moreless(sent)
-                self.deps.convert(sent)
                 # for t in sent['tokens']:
                 #     print(t['id'], t['form'], t['head'], t['deprel'], t['deps'])
+                self.deps.convert(sent)
                 self.punct.punctheads(sent)
                 self.eudclean(sent)
                 self.semconv.convert(sent)
@@ -64,17 +66,15 @@ class Converter:
             return 
         for cop in copulas:
             deps = [t for t in sent['tokens'] if t['head'] == cop['id']]
-
             depbetter = [t for t in deps if t['SurfSlot'] == 'ComparisonTargetInitial'] # the better
             if depbetter:
                 continue
-
             if len(deps) < 1:
                 continue
-            
             depintensity = [t for t in deps if 'DegreeIntensitySlot' in t['SurfSlot']]
-            depcompl = [t for t in deps if 'Complement' in t['SurfSlot'] or t['lemma'] == 'out of']
+            depcompl = [t for t in deps if 'Complement' in t['SurfSlot'] or t['lemma'] == 'out of'] # complements of copula
             if depcompl:
+                # something is about fix
                 if depcompl[0]['SurfSlot'] == 'Complement_NominalNP' and depcompl[0]['grammemes'].get('ExtendedCase') == ['ECabout']:
                     continue
                 if depcompl[0]['SemSlot'] == 'Relation_Correlative' and depcompl[0]['pos'] != 'Noun':
