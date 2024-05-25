@@ -239,45 +239,39 @@ class Fixes:
 
                         for i in range(len(sent)):
                             # поменяли головы
-                            if '_' not in str(sent[i]['head']) and int(sent[i]['head']) >= (stop - number_csv) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
-                                # print(sent[i]['form'])
+                            if '_' not in str(sent[i]['head']) and int(sent[i]['head']) >= (stop - dw) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
+                                
                                 sent[i]['head'] = int(sent[i]['head']) + dw
                             # меняем депс
                             if dot_number.match(str(sent[i]['deps'])):
                                 s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+))').match(sent[i]["deps"]).group(0)
                                 if '|' in sent[i]['deps']:
-                                    d = re.match(r'.+:.+\|(\d+)', sent[i]['deps']).group(1)
-                                    
-                                    if '_' not in str(sent[i]['deps']) and float(s) >= (stop - number_csv):
-                                        sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+))', f'{float(s) + 1}', sent[i]['deps'])
-                                    
-                                    if '_' not in str(sent[i]['deps']) and float(d) >= (stop - number_csv) and '.' not in str(sent[i]['deps']):
-                                        sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{int(d) + 1}', sent[i]['deps'])
-                                    
+                                    def increment_numbers(match):
+                                            number = float(match.group())
+                                            if '_' != str(sent[i]['deps']) and number >= (stop - dw):
+                                                return str(number + dw)
+                                            return str(number)
+                                    output_string = re.sub(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', increment_numbers, sent[i]['deps'])
+                                    sent[i]['deps'] = output_string
                                 else:
-                                    if '_' not in str(sent[i]['deps']) and float(s) >= (stop - number_csv):
-                                        sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
+                                    # если без | но с точкой
+                                    if '_' != str(sent[i]['deps']) and float(s) >= (stop - dw):
+                                        sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + dw}', sent[i]['deps'])
                             else:
-                                
-                                # print(sent[i]['form'])
                                 if '|' in sent[i]['deps']:
-                                    s = re.match(r'(\d+):.+\|\d+', sent[i]['deps']).group(1)
-                                    d = re.match(r'\d+:.+\|(\d+)', sent[i]['deps']).group(1)
-                                    
-                                    if '_' not in str(sent[i]['deps']) and int(s) >= (stop - number_csv):
-                                        sent[i]['deps'] = re.sub(s, f'{int(s) + 1}', sent[i]['deps'])
-
-                                    if '_' not in str(sent[i]['deps']) and int(d) >= (stop - number_csv):
-                                        sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{int(d) + 1}', sent[i]['deps'])
-
+                                    def increment_numbers(match):
+                                            number = int(match.group())
+                                            if '_' != str(sent[i]['deps']) and number >= (stop - dw):
+                                                return str(number + dw)
+                                            return str(number)
+                                    output_string = re.sub(r'\d+', increment_numbers, sent[i]['deps'])
+                                    sent[i]['deps'] = output_string
                                 s = re.compile(r'(\d+)\:(\w+|\w+:\w+|\w+:\w+:\w+)')
 
                                 if s.fullmatch(sent[i]["deps"]):
                                     a = int(s.fullmatch(sent[i]["deps"]).group(1))
-                                    
-                                    if '_' not in str(sent[i]['deps']) and a >= (stop - number_csv) and '__' not in str(sent[i]['SemClass']):
+                                    if '_' != str(sent[i]['deps']) and a >= (stop - dw) and '__' not in str(sent[i]['SemClass']):
                                         sent[i]['deps'] = re.sub(r'(\d+\:)', f'{a + dw}:', sent[i]['deps'])
-
                                 if sent[i]['SemClass'] == '__':
                                     sent[i]['SemClass'] = '_'
 
@@ -325,41 +319,39 @@ class Fixes:
 
                 for i in range(len(sent)):
                     # поменяли головы
-                    if '_' != str(sent[i]['head']) and int(sent[i]['head']) >= (stop) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
-                        sent[i]['head'] = int(sent[i]['head']) + dw
+                    if '_' not in str(sent[i]['head']) and int(sent[i]['head']) > (stop - dw) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
+                            sent[i]['head'] = int(sent[i]['head']) + dw
                     # меняем депс
                     if dot_number.match(str(sent[i]['deps'])):
                         
                         s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+))').match(sent[i]["deps"]).group(0)
                         if '|' in sent[i]['deps']:
-                            d = re.match(r'.+:.+\|(\d+)', sent[i]['deps']).group(1)
-                            
-                            if '_' != str(sent[i]['deps']) and float(s) >= (stop - number_csv):
-                                sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+))', f'{float(s) + 1}', sent[i]['deps'])
-                            
-                            if '_' != str(sent[i]['deps']) and float(d) >= (stop - number_csv) and '.' not in str(sent[i]['deps']):
-                                sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{int(d) + 1}', sent[i]['deps'])
+                            def increment_numbers(match):
+                                    number = float(match.group())
+                                    if '_' != str(sent[i]['deps']) and number >=  (stop - dw):
+                                        return str(number + dw)
+                                    return str(number)
+                            output_string = re.sub(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', increment_numbers, sent[i]['deps'])
+                            sent[i]['deps'] = output_string
                             
                         else:
-                            if '_' != str(sent[i]['deps']) and float(s) >= (stop - number_csv):
+                            if '_' != str(sent[i]['deps']) and float(s) >= (stop - dw):
                                 sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
-                    else:
+                    else:                        
                         if '|' in sent[i]['deps']:
-                            s = re.match(r'(\d+):.+\|\d+', sent[i]['deps']).group(1)
-                            d = re.match(r'\d+:.+\|(\d+)', sent[i]['deps']).group(1)
-                            
-                            if '_' != str(sent[i]['deps']) and int(s) >= (stop - number_csv):
-                                sent[i]['deps'] = re.sub(s, f'{int(s) + 1}', sent[i]['deps'])
-
-                            if '_' != str(sent[i]['deps']) and int(d) >= (stop - number_csv):
-                                sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{int(d) + 1}', sent[i]['deps'])
-
+                            def increment_numbers(match):
+                                    number = int(match.group())
+                                    if '_' != str(sent[i]['deps']) and number >= (stop - dw):
+                                        return str(number + dw)
+                                    return str(number)
+                            output_string = re.sub(r'\d+', increment_numbers, sent[i]['deps'])
+                            sent[i]['deps'] = output_string
                         s = re.compile(r'(\d+)\:(\w+|\w+:\w+|\w+:\w+:\w+)')
 
                         if s.fullmatch(sent[i]["deps"]):
                             a = int(s.fullmatch(sent[i]["deps"]).group(1))
                             
-                            if '_' != str(sent[i]['deps']) and a > (stop - number_csv) and '__' not in str(sent[i]['SemClass']):
+                            if '_' != str(sent[i]['deps']) and a > (stop - dw) and '__' not in str(sent[i]['SemClass']):
                                 sent[i]['deps'] = re.sub(r'(\d+\:)', f'{a + dw}:', sent[i]['deps'])
 
                         if sent[i]['SemClass'] == '__':
@@ -396,41 +388,38 @@ class Fixes:
 
                     for i in range(len(sent)):
                         # поменяли головы
-                        if '_' not in str(sent[i]['head']) and int(sent[i]['head']) >= (stop) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
+                        if '_' not in str(sent[i]['head']) and int(sent[i]['head']) > (stop - dw) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
                             sent[i]['head'] = int(sent[i]['head']) + dw
                         # меняем депс
                         if dot_number.match(str(sent[i]['deps'])):
-                            
                             s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+))').match(sent[i]["deps"]).group(0)
                             if '|' in sent[i]['deps']:
-                                d = re.match(r'.+:.+\|(\d+)', sent[i]['deps']).group(1)
-                                
-                                if '_' not in str(sent[i]['deps']) and float(s) >= (stop - number_csv):
-                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+))', f'{float(s) + 1}', sent[i]['deps'])
-                                
-                                if '_' not in str(sent[i]['deps']) and float(d) >= (stop - number_csv) and '.' not in str(sent[i]['deps']):
-                                    sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{int(d) + 1}', sent[i]['deps'])
+                                def increment_numbers(match):
+                                        number = float(match.group())
+                                        if '_' != str(sent[i]['deps']) and number >=  (stop - dw):
+                                            return str(number + dw)
+                                        return str(number)
+                                output_string = re.sub(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', increment_numbers, sent[i]['deps'])
+                                sent[i]['deps'] = output_string
                                 
                             else:
-                                if '_' not in str(sent[i]['deps']) and float(s) >= (stop - number_csv):
-                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
+                                if '_' != str(sent[i]['deps']) and float(s) >= (stop - dw):
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + dw}', sent[i]['deps'])
                         else:
                             if '|' in sent[i]['deps']:
-                                s = re.match(r'(\d+):.+\|\d+', sent[i]['deps']).group(1)
-                                d = re.match(r'\d+:.+\|(\d+)', sent[i]['deps']).group(1)
-                                
-                                if '_' not in str(sent[i]['deps']) and int(s) >= (stop - number_csv):
-                                    sent[i]['deps'] = re.sub(s, f'{int(s) + 1}', sent[i]['deps'])
-
-                                if '_' not in str(sent[i]['deps']) and int(d) >= (stop - number_csv):
-                                    sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{int(d) + 1}', sent[i]['deps'])
+                                def increment_numbers(match):
+                                        number = int(match.group())
+                                        if '_' != str(sent[i]['deps']) and number >=  (stop - dw):
+                                            return str(number + dw)
+                                        return str(number)
+                                output_string = re.sub(r'\d+', increment_numbers, sent[i]['deps'])
+                                sent[i]['deps'] = output_string
 
                             s = re.compile(r'(\d+)\:(\w+|\w+:\w+|\w+:\w+:\w+)')
-
                             if s.fullmatch(sent[i]["deps"]):
                                 a = int(s.fullmatch(sent[i]["deps"]).group(1))
                                 
-                                if '_' not in str(sent[i]['deps']) and a > (stop - number_csv) and '__' not in str(sent[i]['SemClass']):
+                                if '_' != str(sent[i]['deps']) and a > (stop - dw) and '__' not in str(sent[i]['SemClass']):
                                     sent[i]['deps'] = re.sub(r'(\d+\:)', f'{a + dw}:', sent[i]['deps'])
 
                             if sent[i]['SemClass'] == '__':
@@ -440,7 +429,7 @@ class Fixes:
         """
         Сливает токены
         """
-        
+        dot_number = re.compile(r'\d+\.\d+')
         counter = 0
         null = 0
         while counter != len(sent) - 1:
@@ -523,8 +512,8 @@ class Fixes:
                     for i in range(id_skip + 2, len(dic) + 1):
                         dic[i] = dic[i] - 2
 
+
                     if null >= 1:
-                       
                         for j in range(new_token['id'], len(sent) - c):
                             if j == new_token['id']:
                                 del sent[j]
@@ -540,7 +529,10 @@ class Fixes:
                                 del sent[j + 1]
                                 sent[j] = new_token
                             else:
-                                sent[j]['id'] = int(sent[j]['id']) - c
+                                if sent[j]['form'] == '#NULL':
+                                    sent[j]['id'] = float(sent[j]['id']) - c
+                                else:
+                                    sent[j]['id'] = int(sent[j]['id']) - c
       
                         
             
@@ -573,11 +565,15 @@ class Fixes:
                                     
                     elif null < 1:
                         for j in range(new_token['id'] - 1, len(sent) - c):
+                    
                             if j == new_token['id'] - 1:
                                 del sent[j + 1]
                                 sent[j] = new_token
                             else:
-                                sent[j]['id'] = int(sent[j]['id']) - c
+                                if sent[j]['form'] == '#NULL':
+                                    sent[j]['id'] = float(sent[j]['id']) - c
+                                else:
+                                    sent[j]['id'] = int(sent[j]['id']) - c
 
                 for i in range(len(sent)):
                     for item in dic:
@@ -585,11 +581,6 @@ class Fixes:
                             a = sent[i]['head']
                             if dic[item] != '_':
                                 sent[i]['head'] = dic[item]
-                            if dic[item] == '_' or sent[i]['id'] == new_token['id']:
-                                c = 1
-                            else:
-                                b = sent[i]['head']
-                                c = int(a) - int(b)
                             if sent[i]['head'] == sent[i]['id']:
                                 sent[i]['head'] -= 1
                                 
@@ -598,34 +589,30 @@ class Fixes:
                                 s = float(s)
                             else:
                                 s = int(s)
-                        
+                            # print(sent[i]['form'], new_token['id'], s)
                             if s == new_token['id'] and sent[i]['id'] < new_token['id']:
                                 pass
                             elif s >= new_token['id'] and '|' not in sent[i]["deps"]:
+                                
                                 sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{s - c}:', sent[i]['deps'])
                             
-                            elif '|' in sent[i]["deps"] and '_' != str(sent[i]['deps']):
-                                d = re.match(r'\d+:.+\|(\d+)', sent[i]['deps']).group(1)
-                                if '.' in d:
-                                    d = float(d)
+                            elif '|' in sent[i]["deps"] and '_' != str(sent[i]['deps']): 
+                                if dot_number.match(str(sent[i]['deps'])):
+                                    def increment_numbers(match):
+                                            number = float(match.group())
+                                            if '_' != str(sent[i]['deps']) and number >= new_token['id']:
+                                                return str(number - c)
+                                            return str(number)
+                                    output_string = re.sub(r'\d+|\d+\.\d+\.\d+|\d+\.\d+', increment_numbers, sent[i]['deps'])
+                                    sent[i]['deps'] = output_string
                                 else:
-                                    d = int(d)
-
-                                if s >= new_token['id']:
-                                    d = re.match(r'.+:.+\|(\d+|\d+\.\d+)', sent[i]['deps']).group(1)
-                                    n = re.match(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', sent[i]['deps']).group(1)
-                                    if '.' in n:
-                                        n = float(n)
-                                    else:
-                                        n = int(n)                       
-                                    if '.' in d:
-                                        d = float(d)
-                                    else:
-                                        d = int(d)
-                                    sent[i]['deps'] = re.sub(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', f'{n - c}', sent[i]['deps']) 
-                                if d >= new_token['id']:
-                                    sent[i]['deps'] = re.sub(r'(\|\d+)', f'|{d - c}', sent[i]['deps'])
-            
+                                    def increment_numbers(match):
+                                            number = int(match.group())
+                                            if '_' != str(sent[i]['deps']) and number >= new_token['id']:
+                                                return str(number - c)
+                                            return str(number)
+                                    output_string = re.sub(r'\d+|\d+\.\d+\.\d+|\d+\.\d+', increment_numbers, sent[i]['deps'])
+                                    sent[i]['deps'] = output_string
             else:
                 counter += 1
     def pos_invariable_fix(self, token, pos):
