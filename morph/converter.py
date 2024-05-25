@@ -1,5 +1,5 @@
 import re, csv, pickle, json
-
+from tqdm import tqdm
 from morph.feats_module_en import Feats_module_en
 from morph.pos_module_en import Pos_module_en
 from morph.fixess_en import Fixes_en
@@ -60,9 +60,9 @@ class Converter:
                 for line in f:
                     data.append(json.loads(line))
                 sent_id = 0
-                for i in range(len(data)):
-                    print('Конвертация ...')
-                    print(data[i]['text'])
+                for i in tqdm(range(len(data))):
+                    # print('Конвертация ...')
+                    # print(data[i]['text'])
                     bounded = 0
                     bounded_fgn = 0
                     out.write(f"# sent_id = {sent_id + 1}\n")
@@ -124,7 +124,7 @@ class Converter:
                             break
                     sent_id += 1
                     out.write('\n')
-                    print(f'Закончено: {sent_id}')
+                    # print(f'Закончено: {sent_id}')
             out.close()
             f.close()
 
