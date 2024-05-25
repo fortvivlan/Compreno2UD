@@ -280,7 +280,7 @@ class Feats_module:
             if abbr_check:
                 needed_feat = {'Abbr': 'Yes'}
             if foreign_check:
-                needed_feat['Foreign'] = 'Yes'
+                needed_feat = {'Foreign': 'Yes'}
             if neg_check:
                 if type(needed_feat) == str:
                     if needed_feat != '_':

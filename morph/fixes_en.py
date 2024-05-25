@@ -251,16 +251,13 @@ class Fixes_en:
         number_csv = 0
         for word in sent:
             divided_words = []
-
             c = 0
             if word['form'].lower() in bounded_token_list:
                 for token in csv_dict.items():
                     if token[0].lower() == word['form'].lower():
                         for part in token[1]:
                             if part['head'] != '_':
-                                head = int(part['head'])#upd: исправила
-                            #elif part['head'] == 'None':
-                                #head = 0
+                                head = int(part['head'])
                             else:
                                 head = word['head']
                             if part['pos'] == 'PROPN' or part['form'] in ('I', 'II'):#с I можно еще подумать
@@ -297,9 +294,7 @@ class Fixes_en:
 
                         if number_csv == 0:
                             number_csv +=1
-                        # elif number_csv == 1:
-                        #     number_csv +=2    
-                        
+
                         start = sent.index(word)
                         for i in divided_words:
                             sent.insert(start, i)
@@ -343,6 +338,7 @@ class Fixes_en:
                                 s = re.compile(r'(\d+)\:(\w+|\w+:\w+)')
 
                                 if s.fullmatch(sent[i]["deps"]):
+                                    
                                     a = int(s.fullmatch(sent[i]["deps"]).group(1))
                                     
                                     if '_' not in str(sent[i]['deps']) and a >= (stop - number_csv) and '__' not in str(sent[i]['SemClass']):

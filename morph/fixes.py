@@ -180,7 +180,8 @@ class Fixes:
         Разделяет токены, которые есть в доке csv, состоящие из нескольких токенов.
         Меняет индексацию.
         """
-
+        dot_number = re.compile(r'\d+\.\d+')
+        number_csv = 0
         for word in sent:
             divided_words = []
             c = 0
@@ -189,9 +190,7 @@ class Fixes:
                     if token[0].lower() == word['form'].lower():
                         for part in token[1]:
                             if part['head'] != '_':
-                                head = int(part['head'])#upd: исправила
-                            #elif part['head'] == 'None':
-                                #head = 0
+                                head = int(part['head'])
                             else:
                                 head = word['head']
                             if part['pos'] == 'PROPN' or part['form'] in ('I', 'II'):#с I можно еще подумать
@@ -205,7 +204,10 @@ class Fixes:
                             
                             if new_word['head'] != 0:#если не вершина
                                 new_word['head'] = new_word['id'] - new_word['head']
-                                new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}'
+                                if 'None' in new_word['deps']:
+                                    new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}'
+                                else:
+                                    new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}'
                                 if part['pos'] == 'ADP' and part['deprel']== 'obl':
                                     new_word['deps'] = f'{new_word["head"]}:{part["deprel"]}:case'
                             else:#если вершина
@@ -213,7 +215,7 @@ class Fixes:
                                 new_word['SemSlot'] = word['SemSlot']
                                 new_word['SemClass'] = word['SemClass']
                                 new_word['deprel'] = word['deprel']
-                                new_word['deps'] = word['deps']
+                                new_word['deps'] = new_word['deps']
                                 new_word['misc'] = '_'
                                 new_word['p0s'] ='_'
 
@@ -221,15 +223,11 @@ class Fixes:
                                 new_word['form'] = new_word['form'].title()
                             c += 1
                             divided_words.append(new_word)
-                        if word['form'].lower() in ('больше, чем', 'более, чем'):
-                            for word in sent:
-                                if word['head'] == 0:
-                                    b_head = word['id']
-                            divided_words[0]['head'] = b_head
-                            divided_words[1]['head'] = word['head']
-                            divided_words[2]['head'] = word['head']
+                        dw = len(divided_words) - 1
 
-                        dic = {k: k for k in range(1, len(sent))}
+                        if number_csv == 0:
+                            number_csv +=1 
+                        
                         start = sent.index(word)
                         for i in divided_words:
                             sent.insert(start, i)
@@ -238,23 +236,44 @@ class Fixes:
                         sent.remove(word)
                         for old_word in sent[stop:]:
                             old_word['id'] += len(divided_words) - 1
-                        count = 1
+
                         for i in range(len(sent)):
-                            if sent[i]['SemClass'] == '__':
-                                continue
+                            # поменяли головы
+                            if '_' not in str(sent[i]['head']) and int(sent[i]['head']) >= (stop - dw) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
+                                
+                                sent[i]['head'] = int(sent[i]['head']) + dw
+                            # меняем депс
+                            if dot_number.match(str(sent[i]['deps'])):
+                                s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+))').match(sent[i]["deps"]).group(0)
+                                if '|' in sent[i]['deps']:
+                                    def increment_numbers(match):
+                                            number = float(match.group())
+                                            if '_' != str(sent[i]['deps']) and number >= (stop - dw):
+                                                return str(number + dw)
+                                            return str(number)
+                                    output_string = re.sub(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', increment_numbers, sent[i]['deps'])
+                                    sent[i]['deps'] = output_string
+                                else:
+                                    # если без | но с точкой
+                                    if '_' != str(sent[i]['deps']) and float(s) >= (stop - dw):
+                                        sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + dw}', sent[i]['deps'])
                             else:
-                                dic[count] = sent[i]['id']
-                                count += 1
-                        for i in range(len(sent)):
-                            if sent[i]['SemClass'] == '__':
-                                sent[i]['SemClass'] = '_'
-                                continue
-                            else:
-                                for item in dic:
-                                    if sent[i]['head'] == item:
-                                        sent[i]['head'] = dic[item]
-                                        break
-                        break
+                                if '|' in sent[i]['deps']:
+                                    def increment_numbers(match):
+                                            number = int(match.group())
+                                            if '_' != str(sent[i]['deps']) and number >= (stop - dw):
+                                                return str(number + dw)
+                                            return str(number)
+                                    output_string = re.sub(r'\d+', increment_numbers, sent[i]['deps'])
+                                    sent[i]['deps'] = output_string
+                                s = re.compile(r'(\d+)\:(\w+|\w+:\w+|\w+:\w+:\w+)')
+
+                                if s.fullmatch(sent[i]["deps"]):
+                                    a = int(s.fullmatch(sent[i]["deps"]).group(1))
+                                    if '_' != str(sent[i]['deps']) and a >= (stop - dw) and '__' not in str(sent[i]['SemClass']):
+                                        sent[i]['deps'] = re.sub(r'(\d+\:)', f'{a + dw}:', sent[i]['deps'])
+                                if sent[i]['SemClass'] == '__':
+                                    sent[i]['SemClass'] = '_'
 
 
     def bounded_foreign(self, sent):
@@ -266,6 +285,8 @@ class Fixes:
         foreign_bounded_token = re.compile(r'[A-za-z]+ [A-za-z]+')
         number_bounded = re.compile(r'\d+,?\d*?-\d+,?\d*?')
         divided_words = []
+        dot_number = re.compile(r'\d+\.\d+')
+        number_csv = 0
         c = 0
         for word in sent:
             divided_words = []
@@ -278,12 +299,15 @@ class Fixes:
                 divided_words.append(new_word)
                 c += 1
                 for f_part in f_parts[1:]:
-                    new_word = {'id': word['id'] + c, 'form': f_part, 'lemma': f_part, 'pos': '__', 'p0s': '_', 'grammemes': 'Foreign=Yes',
+                    new_word = {'id': word['id'] + c, 'form': f_part, 'lemma': f_part, 'pos': 'X', 'p0s': '_', 'grammemes': 'Foreign=Yes',
                                 'deprel': 'flat:foreign', 'deps': f'{first_token_id}:flat:foreign', 'head': first_token_id, 'misc': '_', 'SemSlot': '_', 'SemClass': word['SemClass']}
                     c += 1
                     divided_words.append(new_word)
+                dw = len(divided_words) - 1
 
-                dic = {k: k for k in range(1, len(sent))}
+                if number_csv == 0:
+                    number_csv +=1 
+                
                 start = sent.index(word)
                 for i in divided_words:
                     sent.insert(start, i)
@@ -292,25 +316,47 @@ class Fixes:
                 sent.remove(word)
                 for old_word in sent[stop:]:
                     old_word['id'] += len(divided_words) - 1
-                count = 1
+
                 for i in range(len(sent)):
-                    if sent[i]['pos'] == '__':
-                        continue
-                    else:
-                        dic[count] = sent[i]['id']
-                        count += 1
-                for i in range(len(sent)):
-                    if sent[i]['pos'] == '__':
-                        if new_word['form'] in ('%', '$', '°', '€', '+', '№', '#', '@', '~', '^', '&'):
-                            new_word['pos'] = 'SYM'
+                    # поменяли головы
+                    if '_' not in str(sent[i]['head']) and int(sent[i]['head']) > (stop - dw) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
+                            sent[i]['head'] = int(sent[i]['head']) + dw
+                    # меняем депс
+                    if dot_number.match(str(sent[i]['deps'])):
+                        
+                        s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+))').match(sent[i]["deps"]).group(0)
+                        if '|' in sent[i]['deps']:
+                            def increment_numbers(match):
+                                    number = float(match.group())
+                                    if '_' != str(sent[i]['deps']) and number >=  (stop - dw):
+                                        return str(number + dw)
+                                    return str(number)
+                            output_string = re.sub(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', increment_numbers, sent[i]['deps'])
+                            sent[i]['deps'] = output_string
+                            
                         else:
-                            sent[i]['pos'] = 'X'
-                        continue
-                    else:
-                        for item in dic:
-                            if sent[i]['head'] == item:
-                                sent[i]['head'] = dic[item]
-                                break
+                            if '_' != str(sent[i]['deps']) and float(s) >= (stop - dw):
+                                sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + 1}', sent[i]['deps'])
+                    else:                        
+                        if '|' in sent[i]['deps']:
+                            def increment_numbers(match):
+                                    number = int(match.group())
+                                    if '_' != str(sent[i]['deps']) and number >= (stop - dw):
+                                        return str(number + dw)
+                                    return str(number)
+                            output_string = re.sub(r'\d+', increment_numbers, sent[i]['deps'])
+                            sent[i]['deps'] = output_string
+                        s = re.compile(r'(\d+)\:(\w+|\w+:\w+|\w+:\w+:\w+)')
+
+                        if s.fullmatch(sent[i]["deps"]):
+                            a = int(s.fullmatch(sent[i]["deps"]).group(1))
+                            
+                            if '_' != str(sent[i]['deps']) and a > (stop - dw) and '__' not in str(sent[i]['SemClass']):
+                                sent[i]['deps'] = re.sub(r'(\d+\:)', f'{a + dw}:', sent[i]['deps'])
+
+                        if sent[i]['SemClass'] == '__':
+                            sent[i]['SemClass'] = '_'
+
             elif number_bounded.fullmatch(word['form']) and word['pos'] in ('ADJ', 'NUM') and word['SemSlot'] != 'Specification':
                     parts = re.compile(r'(\d+,?\d*?)(-)(\d+,?\d*?)').findall(word['form'])
                     first_token_id = word['id'] + c
@@ -319,15 +365,18 @@ class Fixes:
                     c += 1
                     divided_words.append(new_word)
                     new_word = {'id': word['id'] + c, 'form': parts[0][1], 'lemma': parts[0][1], 'pos': '__', 'p0s': '_', 'grammemes': '_',
-                                'head': first_token_id + 2, 'deprel': 'punct', 'deps': f'{first_token_id}:{word["deprel"]}', 'misc': 'SpaceAfter=No', 'SemSlot': '_', 'SemClass': 'punct'}
+                                'head': first_token_id, 'deprel': 'punct', 'deps': f'{first_token_id}:{word["deprel"]}', 'misc': 'SpaceAfter=No', 'SemSlot': '_', 'SemClass': 'punct'}
                     c += 1
                     divided_words.append(new_word)
                     new_word = {'id': word['id'] + c, 'form': parts[0][2], 'lemma': parts[0][2], 'pos': '__', 'p0s': word['p0s'],  'grammemes': word['grammemes'],
                                 'head': first_token_id, 'deprel': word['deprel'], 'deps': f'{first_token_id}:{word["deprel"]}:minus', 'misc': word['misc'], 'SemSlot': word['SemSlot'], 'SemClass': word['SemClass']}
                     c += 1
                     divided_words.append(new_word)
+                    dw = len(divided_words) - 1
 
-                    dic = {k: k for k in range(1, len(sent))}
+                    if number_csv == 0:
+                        number_csv +=1 
+                    
                     start = sent.index(word)
                     for i in divided_words:
                         sent.insert(start, i)
@@ -336,34 +385,58 @@ class Fixes:
                     sent.remove(word)
                     for old_word in sent[stop:]:
                         old_word['id'] += len(divided_words) - 1
-                    count = 1
+
                     for i in range(len(sent)):
-                        if sent[i]['pos'] == '__':
-                            continue
-                        else:
-                            dic[count] = sent[i]['id']
-                            count += 1
-                    for i in range(len(sent)):
-                        if sent[i]['pos'] == '__':
-                            if sent[i]['deprel'] == 'punct':
-                                sent[i]['pos'] = 'PUNCT'
+                        # поменяли головы
+                        if '_' not in str(sent[i]['head']) and int(sent[i]['head']) > (stop - dw) and '.' not in str(sent[i]['head']) and '__' not in str(sent[i]['SemClass']):
+                            sent[i]['head'] = int(sent[i]['head']) + dw
+                        # меняем депс
+                        if dot_number.match(str(sent[i]['deps'])):
+                            s = re.compile(r'((\d+\.\d+\.\d+|\d+\.\d+))').match(sent[i]["deps"]).group(0)
+                            if '|' in sent[i]['deps']:
+                                def increment_numbers(match):
+                                        number = float(match.group())
+                                        if '_' != str(sent[i]['deps']) and number >=  (stop - dw):
+                                            return str(number + dw)
+                                        return str(number)
+                                output_string = re.sub(r'(\d+\.\d+\.\d+|\d+\.\d+|\d+)', increment_numbers, sent[i]['deps'])
+                                sent[i]['deps'] = output_string
+                                
                             else:
-                                sent[i]['pos'] = word['pos']
-                            continue
+                                if '_' != str(sent[i]['deps']) and float(s) >= (stop - dw):
+                                    sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+))', f'{float(s) + dw}', sent[i]['deps'])
                         else:
-                            for item in dic:
-                                if sent[i]['head'] == item:
-                                    sent[i]['head'] = dic[item]
-                                    break
+                            if '|' in sent[i]['deps']:
+                                def increment_numbers(match):
+                                        number = int(match.group())
+                                        if '_' != str(sent[i]['deps']) and number >=  (stop - dw):
+                                            return str(number + dw)
+                                        return str(number)
+                                output_string = re.sub(r'\d+', increment_numbers, sent[i]['deps'])
+                                sent[i]['deps'] = output_string
+
+                            s = re.compile(r'(\d+)\:(\w+|\w+:\w+|\w+:\w+:\w+)')
+                            if s.fullmatch(sent[i]["deps"]):
+                                a = int(s.fullmatch(sent[i]["deps"]).group(1))
+                                
+                                if '_' != str(sent[i]['deps']) and a > (stop - dw) and '__' not in str(sent[i]['SemClass']):
+                                    sent[i]['deps'] = re.sub(r'(\d+\:)', f'{a + dw}:', sent[i]['deps'])
+
+                            if sent[i]['SemClass'] == '__':
+                                sent[i]['SemClass'] = '_'
 
     def merge(self, sent):
         """
         Сливает токены
         """
-        
+        dot_number = re.compile(r'\d+\.\d+')
         counter = 0
+        null = 0
         while counter != len(sent) - 1:
             c = 0
+            if sent[counter]['form'] == '#NULL':
+                null += 1
+            
             # Если Case = ZeroCase/DativeSpecial или pos = Prefixoid или случаи типа ТУ-154 / 70 - х
             if sent[counter]['pos'] in ('NOUN', 'NUM') and sent[counter]['grammemes'] != None and type(sent[counter]['grammemes']) != str and 'Case' in sent[counter]['grammemes'] and sent[counter]['grammemes']['Case'] == 'ZeroCase' \
                     or sent[counter]['pos'] == 'Prefixoid' and sent[counter]['form'] not in ('бен', 'де') \
@@ -372,6 +445,7 @@ class Fixes:
                     or sent[counter]['form'].isdigit() and sent[counter + 1]['form'] == '-' and sent[counter + 2]['lemma'] in ('й', 'ый') \
                     or sent[counter]['pos'] == 'PROPN' and sent[counter + 1]['form'] == '-' and sent[counter + 2]['form'].startswith('на-') \
                     or sent[counter]['SemSlot'] == 'QuantityForComposite' and sent[counter]['pos'] == 'Invariable':
+                
                 to_merge_token = sent[counter]['form']
                 id_skip = sent[counter]['id']
                 if sent[counter + 1]['form'] == '-':    # если слово через тире
@@ -429,57 +503,116 @@ class Fixes:
                                     'misc': sent[counter + 2]['misc'],
                                     'SemSlot': sent[counter + 2]['SemSlot'],
                                     'SemClass': sent[counter + 2]['SemClass']}
+                        
                     c += 2
                     dic = {k: k for k in range(1, len(sent))}
                     dic[id_skip] = '_'
+
                     dic[id_skip + 1] = '_'
-                    for i in range(id_skip + 2, len(dic)):
+                    for i in range(id_skip + 2, len(dic) + 1):
                         dic[i] = dic[i] - 2
 
-                    for j in range(new_token['id'] - 1, len(sent) - c):
-                        if j == new_token['id'] - 1:
-                            del sent[j]
-                            del sent[j + 1]
-                            sent[j] = new_token
-                        else:
-                            sent[j]['id'] -= c
 
-                    for i in range(len(sent)):
-                        for item in dic:
-                            if sent[i]['head'] == item:
-                                sent[i]['head'] = dic[item]
-                                break
-                else:   # если слово не через тире
+                    if null >= 1:
+                        for j in range(new_token['id'], len(sent) - c):
+                            if j == new_token['id']:
+                                del sent[j]
+                                del sent[j + 1]
+                                sent[j] = new_token
+                            else:
+                                sent[j]['id'] = int(sent[j]['id']) - c
+                                    
+                    elif null < 1:
+                        for j in range(new_token['id'] - 1, len(sent) - c):
+                            if j == new_token['id'] - 1:
+                                del sent[j]
+                                del sent[j + 1]
+                                sent[j] = new_token
+                            else:
+                                if sent[j]['form'] == '#NULL':
+                                    sent[j]['id'] = float(sent[j]['id']) - c
+                                else:
+                                    sent[j]['id'] = int(sent[j]['id']) - c
+      
+                        
+            
+                else: # если слово не через тире
                     new_token = {'id': sent[counter]['id'],
-                                'form': to_merge_token + sent[counter + 1]['form'],
-                                'lemma': to_merge_token + sent[counter + 1]['lemma'],
-                                'pos': sent[counter + 1]['pos'],
-                                'p0s': sent[counter + 1]['p0s'],
-                                'grammemes': sent[counter + 1]['grammemes'],
-                                'deprel': sent[counter + 1]['deprel'],
-                                'deps': sent[counter + 1]['deps'],
-                                'head': sent[counter + 1]['head'],
-                                'misc': sent[counter + 1]['deprel'],
-                                'SemSlot': sent[counter + 1]['SemSlot'],
-                                'SemClass': sent[counter + 1]['SemClass']}
+                                    'form': to_merge_token + sent[counter + 1]['form'],
+                                    'lemma': to_merge_token + sent[counter + 1]['lemma'],
+                                    'pos': sent[counter + 1]['pos'],
+                                    'p0s': sent[counter + 1]['p0s'],
+                                    'grammemes': sent[counter + 1]['grammemes'],
+                                    'deprel': sent[counter + 1]['deprel'],
+                                    'deps': sent[counter + 1]['deps'],
+                                    'head': sent[counter + 1]['head'],
+                                    'misc': sent[counter + 1]['deprel'],
+                                    'SemSlot': sent[counter + 1]['SemSlot'],
+                                    'SemClass': sent[counter + 1]['SemClass']}
                     c += 1
                     dic = {k: k for k in range(1, len(sent))}
                     dic[id_skip] = '_'
                     for i in range(id_skip + 1, len(dic)):
                         dic[i] = dic[i] - 1
 
-                    for j in range(new_token['id'] - 1, len(sent) - c):
-                        if j == new_token['id'] - 1:
-                            sent[j] = new_token
-                            del sent[j + 1]
-                        else:
-                            sent[j]['id'] -= c
+                    if null >= 1:
+                        for j in range(new_token['id'], len(sent) - c):
+                            if j == new_token['id']:
+                                del sent[j + 1]
+                                sent[j] = new_token
+                            else:
+                                sent[j]['id'] = int(sent[j]['id']) - c
+                                    
+                    elif null < 1:
+                        for j in range(new_token['id'] - 1, len(sent) - c):
+                    
+                            if j == new_token['id'] - 1:
+                                del sent[j + 1]
+                                sent[j] = new_token
+                            else:
+                                if sent[j]['form'] == '#NULL':
+                                    sent[j]['id'] = float(sent[j]['id']) - c
+                                else:
+                                    sent[j]['id'] = int(sent[j]['id']) - c
 
-                    for i in range(len(sent)):
-                        for item in dic:
-                            if sent[i]['head'] == item:
+                for i in range(len(sent)):
+                    for item in dic:
+                        if sent[i]['head'] == item:
+                            a = sent[i]['head']
+                            if dic[item] != '_':
                                 sent[i]['head'] = dic[item]
-                                break
+                            if sent[i]['head'] == sent[i]['id']:
+                                sent[i]['head'] -= 1
+                                
+                            s = re.match(r'(\d+\.\d+|\d+)', sent[i]["deps"]).group(1)
+                            if '.' in s:
+                                s = float(s)
+                            else:
+                                s = int(s)
+                            # print(sent[i]['form'], new_token['id'], s)
+                            if s == new_token['id'] and sent[i]['id'] < new_token['id']:
+                                pass
+                            elif s >= new_token['id'] and '|' not in sent[i]["deps"]:
+                                
+                                sent[i]['deps'] = re.sub(r'((\d+\.\d+\.\d+|\d+\.\d+|\d+)\:)', f'{s - c}:', sent[i]['deps'])
+                            
+                            elif '|' in sent[i]["deps"] and '_' != str(sent[i]['deps']): 
+                                if dot_number.match(str(sent[i]['deps'])):
+                                    def increment_numbers(match):
+                                            number = float(match.group())
+                                            if '_' != str(sent[i]['deps']) and number >= new_token['id']:
+                                                return str(number - c)
+                                            return str(number)
+                                    output_string = re.sub(r'\d+|\d+\.\d+\.\d+|\d+\.\d+', increment_numbers, sent[i]['deps'])
+                                    sent[i]['deps'] = output_string
+                                else:
+                                    def increment_numbers(match):
+                                            number = int(match.group())
+                                            if '_' != str(sent[i]['deps']) and number >= new_token['id']:
+                                                return str(number - c)
+                                            return str(number)
+                                    output_string = re.sub(r'\d+|\d+\.\d+\.\d+|\d+\.\d+', increment_numbers, sent[i]['deps'])
+                                    sent[i]['deps'] = output_string
             else:
                 counter += 1
     def pos_invariable_fix(self, token, pos):
