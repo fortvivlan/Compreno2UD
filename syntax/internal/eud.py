@@ -9,11 +9,11 @@ class EnhancedConverter:
     def convert(self, sent):
         self.caseconv(sent)
         self.conjconv(sent)
-        # for t in sent['tokens']:
-        #     print(t['id'], t['form'], t['head'], t['deprel'], t['deps'])
         self.ellipsisconv(sent)
         self.rest(sent)
         self.reftag(sent)
+        # for t in sent['tokens']:
+        #     print(t['id'], t['form'], t['head'], t['deprel'], t['deps'])
             
     def conjconv(self, sent):
         conjs = [t for t in sent['tokens'] if t['grammemes'] != '_' and t['grammemes'].get('TypeOfCoordination')]
@@ -70,6 +70,7 @@ class EnhancedConverter:
 
     def ellipsisconv(self, sent):
         elided = [t for t in sent['tokens'] if type(t['id']) == float]
+        # print([t['id'] for t in elided])
         if not elided:
             return 
         for el in elided:
@@ -86,10 +87,6 @@ class EnhancedConverter:
             # собираем зависимости эллипсиса
             deps = [t for t in sent['tokens'] if t['head'] == el['id']]
             deprels = {t['deprel']: t for t in deps}
-            if el['deprel'] in {'xcomp', 'ccomp'}:
-                for d in deps:
-                    d['head'] = el['head']
-                continue
             # the sooner the better
             depbetter = [t for t in deps if t['SurfSlot'] == 'ComparisonTargetInitial']
             if depbetter:
@@ -101,7 +98,10 @@ class EnhancedConverter:
                         dep['head'] = el['head']
                     else:
                         dep['head'] = newhead['id']
-
+            elif el['deprel'] in {'xcomp', 'ccomp'}:
+                for d in deps:
+                    d['head'] = el['head']
+                continue
             elif el['deprel'] not in {'nsubj', 'obj', 'iobj', 'obl', 'nmod', 'nummod', 'nmod:poss'} and el['pos'] not in {'Noun', 'Pronoun'}:
                 if self.lang != 'Ru':
                     # If the main predicate is elided, we use simple promotion only if there is an aux or cop, or a mark in the case of an infinitival marker.
@@ -137,7 +137,38 @@ class EnhancedConverter:
                             newhead = current[0]
                             break 
                 elif self.lang == 'Ru':
-                    if el['deprel'] == 'root' and 'cop' in deprels:
+                    # эллиптированный глагол - вершина (или конъюнкт вершины), gapping remnant
+                    if el['deprel'] in {'root', 'conj'} or (el['pos'] == 'Verb' and el['SurfSlot'] == 'Topic'):
+                        # про топик временный костыль пока депрелы не отлажу
+                        for dep in deps:
+                            if dep['SurfSlot'] == 'Ellipted_Right':
+                                newhead = dep 
+                                break
+                        for dep in deps:
+                            if dep['deprel'] != 'nsubj':
+                                newhead = dep 
+                                break
+                    if el['deprel'] == 'nsubj':
+                        if deps:
+                            acl = [t for t in deps if 'Participle' in t['SurfSlot']]
+                            adj = [t for t in deps if t['pos'] == 'Adjective']
+                            pron = [t for t in deps if t['pos'] == 'Pronoun']
+                            if acl:
+                                newhead = acl[-1]
+                            elif adj:
+                                newhead = adj[-1]
+                            elif pron:
+                                newhead = pron[-1]
+                            else:
+                                newhead = deps[-1]
+                        for dep in deps:
+                            if dep is newhead:
+                                dep['deps'] = f"{dep['head']}:{dep['deprel']}"
+                                dep['head'] = el['head']
+                                dep['deprel'] = el['deprel']
+                            else:
+                                dep['head'] = newhead['id']
+                    if el['deprel'] in {'root', 'conj'} and 'cop' in deprels:
                         for d in ('amod', 'nummod', 'det', 'nmod', 'case', 'nmod:poss'):
                             if d in deprels:
                                 newhead = deprels[d]
@@ -193,6 +224,37 @@ class EnhancedConverter:
                                 dep['head'] = newhead['id']
                             
             else:
+                # ellipted nouns
+                if el['lemma'] in {'#Субстантиватор', '#ElliptedNoun'}:
+                    if deps:
+                        acl = [t for t in deps if 'Participle' in t['SurfSlot']]
+                        adj = [t for t in deps if t['pos'] == 'Adjective' or t['pos'] == 'Numeral']
+                        pron = [t for t in deps if t['pos'] == 'Pronoun']
+                        if acl:
+                            newhead = acl[-1]
+                        elif adj:
+                            newhead = adj[-1]
+                        elif pron:
+                            newhead = pron[-1]
+                        else:
+                            newhead = deps[-1]
+                        for dep in deps:
+                            if dep is newhead:
+                                if not isinstance(el['head'], float):
+                                    dep['deps'] = f"{dep['head']}:{dep['deprel']}"
+                                dep['head'] = el['head']
+                                dep['deprel'] = el['deprel']
+                                # print(dep['form'], dep['deps'], dep['head'])
+                            else:
+                                dep['head'] = newhead['id']
+                        continue
+                elif el['lemma'] == 'там':
+                    acl = [t for t in deps if 'Relative' in t['SurfSlot']]
+                    if acl:
+                        acl[0]['deps'] = f"{acl[0]['head']}:{acl[0]['deprel']}"
+                        acl[0]['head'] = el['head']
+                    else:
+                        print(sent['text'])
                 # If the head nominal is elided, we promote dependents in the following order: amod > nummod > det > nmod > case.
                 if el['deprel'] == 'conj':
                     if isinstance(el['head'], float):
@@ -253,16 +315,18 @@ class EnhancedConverter:
                     if deps['case'] == 'such':
                         deps['case'] = 'such_as'
                     if self.lang == 'Ru' and case:
-                        token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case'].replace(' ', '_')}:{self.casedict[case]}"
+                        token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case'].replace(' ', '_').replace(',', '')}:{self.casedict[case]}"
                     else:
-                        token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case'].replace(' ', '_')}"
+                        token['deps'] = f"{token['head']}:{token['deprel']}:{deps['case'].replace(' ', '_').replace(',', '')}"
                 elif case:
                     if self.lang == 'Ru' and case:
                         token['deps'] = f"{token['head']}:{token['deprel']}:{self.casedict[case]}"
                     else:
                         token['deps'] = f"{token['head']}:{token['deprel']}"
             if token['deprel'] in {'advcl', 'acl'} and 'mark' in deps:
-                token['deps'] = f"{token['head']}:{token['deprel']}:{deps['mark'].replace(' ', '_')}"
+                if deps['mark'] == 'т.к.':
+                    deps['mark'] = 'так_как'
+                token['deps'] = f"{token['head']}:{token['deprel']}:{deps['mark'].replace(' ', '_').replace(',', '')}"
 
     def reftag(self, sent):
         corefs = [t for t in sent['tokens'] if t.get('IsCoref') and t['lemma'] in {'which', 'that'}]
