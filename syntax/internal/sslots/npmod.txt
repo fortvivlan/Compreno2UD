@@ -1,7 +1,0 @@
-Adjunct_Locative_Actant
-Adjunct_Manner_Reduplication
-DegreeIntensitySlot
-DegreeMultiplicative
-DegreeNumerative
-FinalQuantification_Self
-NoMatter
