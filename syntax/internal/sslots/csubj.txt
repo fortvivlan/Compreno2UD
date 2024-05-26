@@ -1,6 +1,0 @@
-Adjunct_Concession_ParticipleClause_Subj
-RelativeGroup_Indefinite
-Subject_Clausal_Infinitive
-Subject_Clausal_Qu
-Subject_Numeral
-Subject_Of_Modifier

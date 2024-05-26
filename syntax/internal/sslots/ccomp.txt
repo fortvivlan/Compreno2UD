@@ -1,9 +1,0 @@
-Adjunct_Concurrent_Modifier
-Clause_Finite
-Clause_Infinitive_Control
-Clause_Infinitive_IndQu_Control
-Clause_Infinitive_NoControl
-Clause_Subjunctive_IndQu
-Clause_Subjunctive_That
-LocativeFinalPoint_Clausal
-RelativeGroup_Indefinite
