@@ -163,3 +163,5 @@ data/
 
 test/log.txt
 syntax/semantics/SC.csv
+syntax/internal/sslots/
+syntax/internal/base.py
