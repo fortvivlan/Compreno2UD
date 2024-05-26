@@ -368,7 +368,7 @@ class DeprelConverter:
             # mark
             if token['SurfSlot'] in self.mark and head['pos'] not in {'Noun', 'Pronoun'}:
                 token['deprel'] = 'mark'
-            if token['SurfSlot'] in {'Conjunction_DependentClause', 'Conjunction_NominalDependentClause'}:
+            if token['SurfSlot'] in {'Conjunction_DependentClause', 'Conjunction_NominalDependentClause', 'Чем'}:
                 token['deprel'] = 'mark'
             if token['lemma'] == 'that' and head['SurfSlot'] == 'RelativeClause_DirectFiniteThat':
                 token['deprel'] = 'nsubj'
@@ -461,7 +461,7 @@ class DeprelConverter:
                         token['deprel'] = 'acl:relcl'
                     if token['SurfSlot'] == 'Clause_Finite' and token['SemSlot'] == 'Relation_Correlative': # ??
                         token['deprel'] = 'acl:relcl'
-                    if token['SurfSlot'] in self.advcl and head.get('copula') or token['SurfSlot'] == 'Adjunct_Reason_Clause': # костыль
+                    if token['SurfSlot'] in self.advcl and head.get('copula') or token['SurfSlot'] in {'Adjunct_Reason_Clause', 'Adjunct_Time_FiniteForm'}: # костыль
                         token['deprel'] = 'advcl'
 
             # acl:cleft
@@ -864,6 +864,8 @@ class DeprelConverter:
                     print(sent['text'])
                     raise
             
+            if token['deprel'] is None and token['SurfSlot'] == 'Complement_NominalNoControl': # костыль
+                token['deprel'] = 'acl'
             # debug print
             # if token['deprel'] is None:
             #     print(token['form'], head['form'], head['SurfSlot'], head['SemSlot'], head['head'])

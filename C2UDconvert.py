@@ -49,7 +49,7 @@ if __name__ == '__main__':
     #################
 
     lang = 'Ru'
-    infile = 'data/Russian_full.json'
+    infile = 'data/russian_train_new.json'
     outfile = 'data/res.conllu'
     # infile = 'data/test_ru.json'
     # outfile = 'data/res_ru.conllu'   
