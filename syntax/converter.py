@@ -27,10 +27,10 @@ class Converter:
                 self.copulaswap(sent) #test
                 self.twoheads(sent)
                 self.deprels.convert(sent)
-                self.wayfixes(sent)
-                self.moreless(sent)
                 # for t in sent['tokens']:
                 #     print(t['id'], t['form'], t['head'], t['deprel'], t['deps'])
+                self.wayfixes(sent)
+                self.moreless(sent)
                 self.deps.convert(sent)
                 self.punct.punctheads(sent)
                 self.eudclean(sent)
@@ -53,6 +53,7 @@ class Converter:
                 if ihead >= len(heads):
                     raise Exception('Something bad with multiple heads happened')
             heads[ihead]['head'] = 0
+            # print(ihead)
             for h in heads:
                 if h['id'] == head:
                     continue
@@ -131,7 +132,7 @@ class Converter:
                     head = semslots[0]
                     head['nsubjouter'] = True
                 else:
-                    head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() != 'это'][0] # костыль хаха
+                    head = [dep for dep in deps if dep['pos'] != 'PUNCT' and dep['form'].lower() not in {'это', 'кроме того'}][0] # костыль хаха and dep['SurfSlot'] != 'Situative_Introductory_Stance_CommaAllowed'
             head['head'] = cop['head'] 
             cop['head'] = head['id']
             for token in sent['tokens']:
